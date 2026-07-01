@@ -848,19 +848,23 @@ function buildPrompt(mode){
   const termNames=['1st Term','2nd Term','3rd Term'];
   const termLabel=`${termNames[term-1]} (SA${sa})`;
   const school=document.getElementById('si-school').value.trim();
+  // PISA-like and open-ended are counted WITHIN totalItems, not on top of it
+  const mcqCount=Math.max(totalItems-2,0);
+  const pisaNum=mcqCount+1;
+  const oeNum=mcqCount+2;
 
   let prompt='';
 
   if(mode==='full'){
     prompt += `You are a DepEd-aligned assessment item writer for ${level}.\n`;
-    prompt += `Generate ${totalItems} multiple-choice test questions with 4 options (A, B, C, D) based on the Table of Specifications below.\n\n`;
+    prompt += `Generate a ${totalItems}-item test based on the Table of Specifications below: ${mcqCount} multiple-choice questions (4 options: A, B, C, D) PLUS 1 PISA-like question (item #${pisaNum}) and 1 open-ended question (item #${oeNum}) — these two are already counted within the ${totalItems} total.\n\n`;
     prompt += `═══════════════════════════════════════════\n`;
     prompt += `SCHOOL: ${school}\n`;
     prompt += `SUBJECT: ${subject}\n`;
     prompt += `GRADE LEVEL & SECTION: ${grade}\n`;
     prompt += `EXAMINATION: ${termLabel}\n`;
     prompt += `TEACHER: ${teacher}\n`;
-    prompt += `TOTAL ITEMS: ${totalItems}\n`;
+    prompt += `TOTAL ITEMS: ${totalItems} (${mcqCount} MCQ + 1 PISA-like + 1 Open-Ended)\n`;
     prompt += `TOTAL TEACHING DAYS: ${totalDays}\n`;
     prompt += `═══════════════════════════════════════════\n\n`;
     prompt += `COMPETENCIES, OBJECTIVES, AND ITEM DISTRIBUTION:\n\n`;
@@ -884,43 +888,42 @@ function buildPrompt(mode){
     prompt += `   • Analysis — analyze, compare, examine, differentiate\n`;
     prompt += `   • Evaluating — judge, assess, defend, justify\n`;
     prompt += `   • Creating — design, formulate, construct, propose\n`;
-    prompt += `4. Number questions according to the Item Placement specified above.\n`;
+    prompt += `4. Number the ${mcqCount} multiple-choice questions 1 to ${mcqCount} following the Item Placement specified above.\n`;
     prompt += `5. Do not repeat or minimally paraphrase questions.\n`;
-    prompt += `6. After all questions, provide a separate ANSWER KEY section listing the correct answers (e.g. 1-A, 2-C, ...).\n`;
+    prompt += `6. After item ${mcqCount}, continue numbering with item #${pisaNum} (PISA-like) and item #${oeNum} (Open-Ended) — see specs below. Then provide a separate ANSWER KEY section listing the correct answers for items 1–${mcqCount} (e.g. 1-A, 2-C, ...).\n`;
     prompt += `\n`;
-    prompt += `ADDITIONAL REQUIRED ITEMS (beyond the ${totalItems} multiple-choice questions):\n`;
-    prompt += `A. PISA-like Question (1 item)\n`;
+    prompt += `ITEM #${pisaNum} — PISA-like Question (counted within the ${totalItems} total, NOT extra)\n`;
     prompt += `   • Provide a short reading passage, data table, graph, or real-world scenario.\n`;
     prompt += `   • Write at least 2 sub-items (a, b, c) that require interpretation, inference, or application of the passage/data.\n`;
     prompt += `   • Align to Analysis or Evaluating level.\n`;
     prompt += `   • Context should be relevant to ${subject} and ${grade} learners.\n`;
     prompt += `\n`;
-    prompt += `B. Open-Ended Question (1 item, worth ${oePts} point${oePts>1?'s':''})\n`;
+    prompt += `ITEM #${oeNum} — Open-Ended Question (counted within the ${totalItems} total, worth ${oePts} point${oePts>1?'s':''})\n`;
     prompt += `   • Require a written or constructed response (not multiple-choice).\n`;
     prompt += `   • Should demand explanation, justification, or demonstration of understanding.\n`;
     prompt += `   • Align to the highest cognitive domain appearing in the TOS.\n`;
     prompt += `   • Include a SIMPLE scoring rubric (3 short criteria, easy to apply — not a full analytic rubric).\n`;
     prompt += `\n`;
-    prompt += `Place these two items AFTER the numbered multiple-choice questions and before the Answer Key.\n`;
+    prompt += `Place item #${pisaNum} and item #${oeNum} immediately after item #${mcqCount}, before the Answer Key. Do NOT add these as bonus items beyond the ${totalItems} total.\n`;
 
   } else if(mode==='compact'){
-    prompt += `Generate ${totalItems} multiple-choice questions (A/B/C/D) for ${subject}, ${grade}, ${termLabel}.\n\n`;
+    prompt += `Generate a ${totalItems}-item test for ${subject}, ${grade}, ${termLabel}: ${mcqCount} multiple-choice (A/B/C/D, items 1–${mcqCount}) + 1 PISA-like question (item #${pisaNum}) + 1 open-ended question (item #${oeNum}). The last two are already included in the ${totalItems} total, not extra.\n\n`;
     rows.forEach((r,i)=>{
       const domSummary=DOMAINS.filter(d=>r.domains[d]).map(d=>`${ABBR[d]}:${r.domains[d]}`).join(', ');
       prompt += `${i+1}. ${r.label} — ${r.items} items [${domSummary}]\n`;
       r.objectives.forEach(o=>prompt += `   • ${o}\n`);
       prompt += `   Placement: ${r.placement.replace(/\n/g,', ')}\n\n`;
     });
-    prompt += `Include an answer key. Align question difficulty to the domain (R=recall, U=explain, App=apply, An=analyze, Ev=evaluate, C=create).\n`;
-    prompt += `\nADDITIONAL REQUIRED: After the MCQs, add 1 PISA-like question (with a scenario/data and 2+ sub-items, Analysis/Evaluating level) and 1 open-ended/constructed-response question worth ${oePts} point${oePts>1?'s':''} (with a SIMPLE rubric of 3 short criteria, highest domain in TOS). Place these before the Answer Key.`;
+    prompt += `Include an answer key for items 1–${mcqCount}. Align question difficulty to the domain (R=recall, U=explain, App=apply, An=analyze, Ev=evaluate, C=create).\n`;
+    prompt += `\nItem #${pisaNum} = PISA-like (scenario/data + 2+ sub-items, Analysis/Evaluating level). Item #${oeNum} = open-ended/constructed-response worth ${oePts} point${oePts>1?'s':''} (SIMPLE rubric, 3 short criteria, highest domain in TOS). Both placed before the Answer Key, within the ${totalItems} total — not additional.`;
 
   } else if(mode==='filipino'){
     prompt += `Ikaw ay isang tagapagsulat ng mga pagsubok na nakahanay sa kurikulum ng DepEd para sa ${level}.\n`;
-    prompt += `Gumawa ng ${totalItems} na multiple-choice na tanong (4 pagpipilian: A, B, C, D) batay sa Table of Specifications sa ibaba.\n\n`;
+    prompt += `Gumawa ng kabuuang ${totalItems} na aytem batay sa Table of Specifications sa ibaba: ${mcqCount} multiple-choice na tanong (4 pagpipilian: A, B, C, D — mga aytem 1–${mcqCount}) + 1 PISA-like na tanong (aytem #${pisaNum}) + 1 bukas na tanong (aytem #${oeNum}). Ang huling dalawa ay KASAMA na sa ${totalItems} total, hindi dagdag.\n\n`;
     prompt += `ASIGNATURA: ${subject}\n`;
     prompt += `BAITANG AT SEKSYON: ${grade}\n`;
     prompt += `PAGSUBOK: ${termLabel}\n`;
-    prompt += `KABUUANG AYTEM: ${totalItems}\n\n`;
+    prompt += `KABUUANG AYTEM: ${totalItems} (${mcqCount} MCQ + 1 PISA-like + 1 Bukas na Tanong)\n\n`;
     prompt += `MGA KAKAYAHAN AT DISTRIBUSYON NG AYTEM:\n\n`;
     rows.forEach((r,i)=>{
       prompt += `${i+1}. ${r.label}\n`;
@@ -931,20 +934,19 @@ function buildPrompt(mode){
     });
     prompt += `PANUTO:\n`;
     prompt += `1. Isulat ang mga tanong sa malinaw na Filipino o English na naaangkop sa ${grade}.\n`;
-    prompt += `2. Bawat tanong ay may 4 na pagpipilian (A, B, C, D). Iisa lamang ang tamang sagot.\n`;
+    prompt += `2. Bawat multiple-choice na tanong (aytem 1–${mcqCount}) ay may 4 na pagpipilian (A, B, C, D). Iisa lamang ang tamang sagot.\n`;
     prompt += `3. Ihanay ang bawat tanong sa tamang antas ng kakayahan (Paggunita, Pag-unawa, Paglalapat, Pagsusuri, Pagsasuri, Paglikha).\n`;
-    prompt += `4. Gamitin ang item placement na nakalagay sa TOS bilang gabay sa pagbibilang ng mga tanong.\n`;
-    prompt += `5. Pagkatapos ng lahat ng tanong, magbigay ng hiwalay na SUSI SA SAGOT.\n`;
+    prompt += `4. Gamitin ang item placement na nakalagay sa TOS bilang gabay sa pagbibilang ng mga tanong 1 hanggang ${mcqCount}.\n`;
+    prompt += `5. Pagkatapos ng aytem #${mcqCount}, ipagpatuloy ang bilang sa aytem #${pisaNum} (PISA-like) at aytem #${oeNum} (Bukas na Tanong), pagkatapos ay magbigay ng hiwalay na SUSI SA SAGOT para sa mga aytem 1–${mcqCount}.\n`;
     prompt += `\n`;
-    prompt += `KARAGDAGANG KINAKAILANGANG AYTEM (bukod sa ${totalItems} multiple-choice questions):\n`;
-    prompt += `A. PISA-like na Tanong (1 aytem)\n`;
+    prompt += `AYTEM #${pisaNum} — PISA-like na Tanong (kasama sa ${totalItems} total, hindi dagdag)\n`;
     prompt += `   • Maglaan ng maikling sipi, talaan ng datos, graph, o tunay na sitwasyon.\n`;
     prompt += `   • Sumulat ng hindi bababa sa 2 sub-tanong (a, b, c) na nangangailangan ng interpretasyon o pagsusuri.\n`;
     prompt += `   • Iayon sa antas ng Pagsusuri o Pagsasuri.\n`;
-    prompt += `B. Bukas na Tanong (1 aytem, ${oePts} puntos)\n`;
+    prompt += `AYTEM #${oeNum} — Bukas na Tanong (kasama sa ${totalItems} total, ${oePts} puntos)\n`;
     prompt += `   • Nangangailangan ng nakasulat na sagot, paliwanag, o pagpapatunay.\n`;
     prompt += `   • Isama ang ISANG SIMPLENG rubric ng pagmamarka (3 maikling pamantayan lamang, hindi kumplikado).\n`;
-    prompt += `Ilagay ang dalawang aytem na ito PAGKATAPOS ng numbered na multiple-choice questions at bago ang Susi sa Sagot.\n`;
+    prompt += `Ilagay ang aytem #${pisaNum} at aytem #${oeNum} kaagad pagkatapos ng aytem #${mcqCount}, bago ang Susi sa Sagot. HUWAG idagdag bilang bonus na labas sa ${totalItems} total.\n`;
   }
 
   document.getElementById('promptTA').value=prompt;
