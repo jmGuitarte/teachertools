@@ -130,6 +130,25 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
 .stat{font-size:12px;color:#6b5f4a;}
 .stat b{display:block;font-family:'JetBrains Mono',monospace;font-size:17px;color:var(--maroon-deep);}
 ::selection{background:var(--gold-light);}
+/* ── AI Prompt section ── */
+.prompt-wrap{position:relative;margin-top:14px;}
+.prompt-ta{
+  width:100%;min-height:320px;border:1.5px solid var(--line);border-radius:10px;
+  padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:12px;
+  line-height:1.7;background:var(--paper-deep);color:var(--ink);resize:vertical;
+  white-space:pre;overflow-x:auto;
+}
+.prompt-ta:focus{outline:none;border-color:var(--gold);}
+.copy-btn{
+  position:absolute;top:10px;right:10px;
+  background:var(--maroon);color:#fff;border:none;border-radius:7px;
+  font-size:12px;font-weight:700;padding:5px 12px;cursor:pointer;font-family:'Inter',sans-serif;
+  transition:.14s;opacity:.9;
+}
+.copy-btn:hover{opacity:1;background:var(--maroon-deep);}
+.copy-btn.copied{background:var(--good);}
+.prompt-tools{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center;}
+.prompt-hint{font-size:12px;color:#8a7a5c;margin-left:auto;}
 /* ── Footer ── */
 .site-footer{
   margin-top:48px;
@@ -162,6 +181,27 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
   <div class="grid-4">
     <div class="field"><label>Name of School</label><input type="text" id="si-school" value="SICAYAB NATIONAL HIGH SCHOOL"></div>
     <div class="field"><label>School ID</label><input type="text" id="si-id" value="303892"></div>
+    <div class="field">
+      <label>School Level / Track</label>
+      <select id="si-level" style="padding:8px 11px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);transition:.14s;cursor:pointer;">
+        <optgroup label="── Junior High School ──">
+          <option value="Junior High School (Grades 7–10)">Junior High School (Gr. 7–10)</option>
+        </optgroup>
+        <optgroup label="── Strengthened SHS (SY 2026–2027 onward) ──">
+          <option value="Strengthened SHS – Academic Track" selected>SSHS – Academic Track</option>
+          <option value="Strengthened SHS – Technical-Professional (TechPro) Track">SSHS – Technical-Professional (TechPro) Track</option>
+        </optgroup>
+        <optgroup label="── Previous SHS Curriculum (Grade 12 transition) ──">
+          <option value="SHS – Academic Track (STEM)">SHS – Academic Track (STEM)</option>
+          <option value="SHS – Academic Track (ABM)">SHS – Academic Track (ABM)</option>
+          <option value="SHS – Academic Track (HUMSS)">SHS – Academic Track (HUMSS)</option>
+          <option value="SHS – Academic Track (GAS)">SHS – Academic Track (GAS)</option>
+          <option value="SHS – Technical-Vocational-Livelihood (TVL) Track">SHS – TVL Track</option>
+          <option value="SHS – Sports Track">SHS – Sports Track</option>
+          <option value="SHS – Arts &amp; Design Track">SHS – Arts &amp; Design Track</option>
+        </optgroup>
+      </select>
+    </div>
     <div class="field"><label>Grade Level &amp; Section</label><input type="text" id="si-grade" placeholder="e.g. Grade 12 – Emerald"></div>
     <div class="field"><label>Subject</label><input type="text" id="si-subject" placeholder="e.g. CSS NC II"></div>
   </div>
@@ -313,6 +353,22 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
 </section>
 
 </div>
+
+<!-- ⑦ AI Prompt Generator -->
+<section class="card" id="promptCard" style="display:none;">
+  <p class="card-title">⑦ AI Prompt — Test Question Generator</p>
+  <p class="card-desc">This prompt is built programmatically from your TOS data. Copy it into ChatGPT, Copilot, DeepSeek, or Gemini to generate aligned test questions. No AI is used in building this prompt — it is assembled entirely from the table above.</p>
+  <div class="prompt-wrap">
+    <textarea class="prompt-ta" id="promptTA" readonly></textarea>
+    <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">Copy</button>
+  </div>
+  <div class="prompt-tools">
+    <button class="btn btn-sm" onclick="buildPrompt('full')">Full prompt (all details)</button>
+    <button class="btn btn-sm" onclick="buildPrompt('compact')">Compact prompt</button>
+    <button class="btn btn-sm" onclick="buildPrompt('filipino')">Tagalog version</button>
+    <span class="prompt-hint">Paste into ChatGPT · Copilot · DeepSeek · Gemini</span>
+  </div>
+</section>
 
 <footer class="site-footer">
   <div class="wrap">
@@ -625,6 +681,9 @@ function renderPreview({rows,target,totalDays,totalItems}){
   document.getElementById('statRow').innerHTML=`<div class="stat">Competencies<b>${rows.length}</b></div><div class="stat">Total Days<b>${totalDays}</b></div><div class="stat">Target Items<b>${target}</b></div><div class="stat">Allocated<b>${totalItems}</b></div>`;
   const card=document.getElementById('previewCard');card.style.display='block';
   setTimeout(()=>card.scrollIntoView({behavior:'smooth',block:'start'}),100);
+  // Auto-build the full prompt and reveal prompt card
+  buildPrompt('full');
+  document.getElementById('promptCard').style.display='block';
 }
 
 /* ── EXPORT ── */
@@ -695,6 +754,109 @@ function triggerDl(buf,name){
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.rel='noopener';
   document.body.appendChild(a);a.click();document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+
+/* ── AI PROMPT BUILDER ── */
+function buildPrompt(mode){
+  if(!tosData){return;}
+  const {rows,target,totalDays,totalItems}=tosData;
+  const subject=document.getElementById('si-subject').value.trim()||'[Subject]';
+  const grade=document.getElementById('si-grade').value.trim()||'[Grade Level & Section]';
+  const teacher=document.getElementById('si-teacher').value.trim()||'[Teacher]';
+  const level=document.getElementById('si-level').value;
+  const termNames=['1st Term','2nd Term','3rd Term'];
+  const termLabel=`${termNames[term-1]} (SA${sa})`;
+  const school=document.getElementById('si-school').value.trim();
+
+  let prompt='';
+
+  if(mode==='full'){
+    prompt += `You are a DepEd-aligned assessment item writer for ${level}.\n`;
+    prompt += `Generate ${totalItems} multiple-choice test questions with 4 options (A, B, C, D) based on the Table of Specifications below.\n\n`;
+    prompt += `═══════════════════════════════════════════\n`;
+    prompt += `SCHOOL: ${school}\n`;
+    prompt += `SUBJECT: ${subject}\n`;
+    prompt += `GRADE LEVEL & SECTION: ${grade}\n`;
+    prompt += `EXAMINATION: ${termLabel}\n`;
+    prompt += `TEACHER: ${teacher}\n`;
+    prompt += `TOTAL ITEMS: ${totalItems}\n`;
+    prompt += `TOTAL TEACHING DAYS: ${totalDays}\n`;
+    prompt += `═══════════════════════════════════════════\n\n`;
+    prompt += `COMPETENCIES, OBJECTIVES, AND ITEM DISTRIBUTION:\n\n`;
+    rows.forEach((r,i)=>{
+      prompt += `${i+1}. COMPETENCY: ${r.label}\n`;
+      prompt += `   Learning Objectives:\n`;
+      r.objectives.forEach(o=>{ prompt += `   >> ${o}\n`; });
+      prompt += `   No. of Days: ${r.days} | Items: ${r.items} | Weight: ${(r.pct*100).toFixed(1)}%\n`;
+      prompt += `   Cognitive Domain Distribution:\n`;
+      DOMAINS.forEach(d=>{ if(r.domains[d]) prompt += `     • ${d} (${ABBR[d]}): ${r.domains[d]} item${r.domains[d]>1?'s':''}\n`; });
+      prompt += `   Item Placement: ${r.placement.replace(/\n/g,', ')}\n\n`;
+    });
+    prompt += `═══════════════════════════════════════════\n\n`;
+    prompt += `INSTRUCTIONS:\n`;
+    prompt += `1. Write all questions in clear, simple English appropriate for ${grade} students.\n`;
+    prompt += `2. Each question must have exactly 4 options: A, B, C, D. Only one answer is correct.\n`;
+    prompt += `3. Align each question to the cognitive domain specified:\n`;
+    prompt += `   • Remembering — recall, identify, name, list\n`;
+    prompt += `   • Understanding — explain, describe, distinguish, classify\n`;
+    prompt += `   • Application — solve, apply, use, demonstrate\n`;
+    prompt += `   • Analysis — analyze, compare, examine, differentiate\n`;
+    prompt += `   • Evaluating — judge, assess, defend, justify\n`;
+    prompt += `   • Creating — design, formulate, construct, propose\n`;
+    prompt += `4. Number questions according to the Item Placement specified above.\n`;
+    prompt += `5. Do not repeat or minimally paraphrase questions.\n`;
+    prompt += `6. After all questions, provide a separate ANSWER KEY section listing the correct answers (e.g. 1-A, 2-C, ...).\n`;
+    prompt += `7. Label each question with its competency number (e.g. [Competency 1]) in parentheses after the item number.\n`;
+
+  } else if(mode==='compact'){
+    prompt += `Generate ${totalItems} multiple-choice questions (A/B/C/D) for ${subject}, ${grade}, ${termLabel}.\n\n`;
+    rows.forEach((r,i)=>{
+      const domSummary=DOMAINS.filter(d=>r.domains[d]).map(d=>`${ABBR[d]}:${r.domains[d]}`).join(', ');
+      prompt += `${i+1}. ${r.label} — ${r.items} items [${domSummary}]\n`;
+      r.objectives.forEach(o=>prompt += `   • ${o}\n`);
+      prompt += `   Placement: ${r.placement.replace(/\n/g,', ')}\n\n`;
+    });
+    prompt += `Include an answer key. Align question difficulty to the domain (R=recall, U=explain, App=apply, An=analyze, Ev=evaluate, C=create).`;
+
+  } else if(mode==='filipino'){
+    prompt += `Ikaw ay isang tagapagsulat ng mga pagsubok na nakahanay sa kurikulum ng DepEd para sa ${level}.\n`;
+    prompt += `Gumawa ng ${totalItems} na multiple-choice na tanong (4 pagpipilian: A, B, C, D) batay sa Table of Specifications sa ibaba.\n\n`;
+    prompt += `ASIGNATURA: ${subject}\n`;
+    prompt += `BAITANG AT SEKSYON: ${grade}\n`;
+    prompt += `PAGSUBOK: ${termLabel}\n`;
+    prompt += `KABUUANG AYTEM: ${totalItems}\n\n`;
+    prompt += `MGA KAKAYAHAN AT DISTRIBUSYON NG AYTEM:\n\n`;
+    rows.forEach((r,i)=>{
+      prompt += `${i+1}. ${r.label}\n`;
+      prompt += `   Mga Layunin:\n`;
+      r.objectives.forEach(o=>prompt += `   >> ${o}\n`);
+      const domSummary=DOMAINS.filter(d=>r.domains[d]).map(d=>`${ABBR[d]}:${r.domains[d]}`).join(', ');
+      prompt += `   Aytem: ${r.items} [${domSummary}] — Placement: ${r.placement.replace(/\n/g,', ')}\n\n`;
+    });
+    prompt += `PANUTO:\n`;
+    prompt += `1. Isulat ang mga tanong sa malinaw na Filipino o English na naaangkop sa ${grade}.\n`;
+    prompt += `2. Bawat tanong ay may 4 na pagpipilian (A, B, C, D). Iisa lamang ang tamang sagot.\n`;
+    prompt += `3. Ihanay ang bawat tanong sa tamang antas ng kakayahan (Paggunita, Pag-unawa, Paglalapat, Pagsusuri, Pagsasuri, Paglikha).\n`;
+    prompt += `4. Gamitin ang item placement na nakalagay sa TOS bilang gabay sa pagbibilang ng mga tanong.\n`;
+    prompt += `5. Pagkatapos ng lahat ng tanong, magbigay ng hiwalay na SUSI SA SAGOT.\n`;
+  }
+
+  document.getElementById('promptTA').value=prompt;
+}
+
+function copyPrompt(){
+  const ta=document.getElementById('promptTA');
+  if(!ta.value)return;
+  navigator.clipboard.writeText(ta.value).then(()=>{
+    const btn=document.getElementById('copyBtn');
+    btn.textContent='Copied!'; btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied');},2000);
+  }).catch(()=>{
+    ta.select(); document.execCommand('copy');
+    const btn=document.getElementById('copyBtn');
+    btn.textContent='Copied!'; btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied');},2000);
+  });
 }
 
 /* ── INIT ── */
