@@ -23,6 +23,77 @@ header{background:linear-gradient(165deg,var(--maroon-deep),var(--maroon));color
 h1{font-family:'Source Serif 4',serif;font-size:clamp(24px,3.5vw,36px);font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:12px;}
 .ver{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(255,255,255,.14);padding:3px 9px;border-radius:20px;font-weight:500;}
 .sub{font-size:13.5px;color:#e6d6b8;opacity:.85;}
+/* ── Draft toolbar & restore banner ── */
+.draft-bar{
+  display:flex;align-items:center;justify-content:flex-end;gap:9px;
+  margin-top:16px;flex-wrap:wrap;
+}
+.draft-status{font-size:11.5px;color:#c8b890;opacity:.85;margin-right:auto;font-family:'JetBrains Mono',monospace;}
+.draft-btn{
+  background:rgba(255,255,255,.12);color:#f6ecd9;border:1px solid rgba(255,255,255,.25);
+  border-radius:7px;font-size:12px;font-weight:600;padding:6px 13px;cursor:pointer;
+  font-family:'Inter',sans-serif;transition:.14s;
+}
+.draft-btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.4);}
+/* ── Top-level tabs ── */
+.app-tabs{
+  display:flex;gap:6px;margin-top:18px;padding:6px;
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:14px 14px 0 0;
+  box-shadow:0 8px 24px -8px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.12);
+}
+.app-tab{
+  padding:9px 22px;border-radius:9px;font-size:13.5px;font-weight:700;cursor:pointer;
+  background:rgba(255,255,255,.08);color:#e6d6b8;border:1px solid rgba(255,255,255,.16);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  transition:.18s;font-family:'Inter',sans-serif;
+}
+.app-tab.active{
+  background:rgba(250,246,238,.88);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  color:var(--maroon-deep);
+  border-color:rgba(255,255,255,.5);
+  box-shadow:0 2px 10px -2px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.6);
+}
+.app-tab:hover:not(.active){background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);}
+.view{display:none;}
+.view.active{display:block;}
+/* ── Question Bank ── */
+.qb-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px;}
+@media(max-width:800px){.qb-grid{grid-template-columns:1fr;}}
+.qb-type-tabs{display:flex;gap:0;margin-bottom:14px;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex-wrap:wrap;}
+.qb-type-tab{flex:1;min-width:110px;padding:9px 10px;font-size:12.5px;font-weight:600;text-align:center;cursor:pointer;background:var(--paper-deep);color:#8a7a5c;border:none;transition:.14s;font-family:'Inter',sans-serif;}
+.qb-type-tab.active{background:#fff;color:var(--maroon-deep);}
+.opt-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.opt-row input[type=radio]{accent-color:var(--maroon);flex-shrink:0;}
+.opt-row input[type=text]{flex:1;}
+.pair-row{display:flex;gap:8px;margin-bottom:7px;align-items:center;}
+.pair-row input{flex:1;}
+.pair-row button{flex-shrink:0;background:none;border:none;color:#c0392b;font-size:17px;cursor:pointer;padding:2px 6px;}
+.qb-filter-bar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end;}
+.qb-filter-bar .field{min-width:160px;}
+.qb-filter-bar select,.qb-filter-bar input{padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;font-family:'Inter',sans-serif;background:var(--paper);}
+.qb-table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;}
+table.qbtbl{border-collapse:collapse;width:100%;min-width:820px;}
+table.qbtbl thead th{background:var(--maroon);color:#fff;padding:8px 10px;font-size:11px;font-weight:700;text-align:left;border:1px solid rgba(255,255,255,.15);white-space:nowrap;}
+table.qbtbl td{border:1px solid var(--line-soft);padding:7px 9px;font-size:12px;vertical-align:top;}
+.qb-type-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#fff;}
+.qb-empty{text-align:center;padding:34px 20px;color:#9a8e76;}
+.qb-actions button{background:none;border:none;cursor:pointer;font-size:13px;padding:2px 5px;}
+.qb-actions .edit{color:#4f6b3a;}
+.qb-actions .del{color:#c0392b;}
+.gap-item{padding:6px 10px;background:#fdf0e8;border:1px solid #f0c9a8;border-radius:7px;font-size:12px;color:var(--warn);margin-bottom:5px;}
+.assembled-q{border:1px solid var(--line-soft);border-radius:8px;padding:10px 13px;margin-bottom:9px;background:#fffefb;}
+.assembled-q .qnum{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--maroon-deep);margin-right:6px;}
+.restore-banner{
+  background:#fdf6e6;border:1px solid var(--gold);border-radius:10px;
+  padding:12px 16px;margin-top:18px;display:flex;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;font-size:13px;color:#5a4420;
+}
+.restore-banner b{color:var(--maroon-deep);}
+.restore-actions{display:flex;gap:8px;}
 .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-top:20px;box-shadow:var(--shadow);}
 .card-title{font-family:'Source Serif 4',serif;font-size:17px;color:var(--maroon-deep);font-weight:700;margin-bottom:3px;}
 .card-desc{font-size:12.5px;color:#6b5f4a;margin-bottom:16px;}
@@ -45,7 +116,7 @@ h1{font-family:'Source Serif 4',serif;font-size:clamp(24px,3.5vw,36px);font-weig
 /* SA radio row */
 .sa-row{display:none;gap:6px;padding-left:4px;}
 .sa-row.visible{display:flex;}
-.sa-chip{display:flex;align-items:center;gap:6px;padding:5px 12px;border:1.5px solid var(--line);border-radius:20px;cursor:pointer;font-size:12px;font-weight:700;color:#6b5f4a;background:#fff;transition:.14s;user-select:none;font-family:'JetBrains Mono',monospace;}
+.sa-chip{display:flex;align-items:center;gap:6px;padding:5px 12px;border:1.5px solid var(--line);border-radius:20px;cursor:pointer;font-size:12px;font-weight:700;color:#6b5f4a;background:#fff;transition:.14s;user-select:none;font-family:'JetBrains Mono',monospace;white-space:nowrap;}
 .sa-chip:hover{border-color:var(--gold);}
 .sa-chip input[type=radio]{display:none;}
 .sa-chip.active{border-color:var(--maroon);background:var(--maroon);color:#fff;}
@@ -175,10 +246,31 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
     <p class="eyebrow">Sicayab National High School · Schools Division of Dipolog City</p>
     <h1>Table of Specifications Generator <span class="ver">v2</span></h1>
     <p class="sub">Upload a source file or encode competencies directly. Domain classification is instant and rule-based — no AI in computation.</p>
+    <div class="draft-bar">
+      <span class="draft-status" id="draftStatus">No draft saved yet</span>
+      <button class="draft-btn" onclick="saveDraftFile()">💾 Save Draft</button>
+      <label class="draft-btn" style="display:inline-block;">
+        📂 Load Draft
+        <input type="file" id="loadDraftInput" accept=".json" style="display:none;">
+      </label>
+    </div>
+    <div class="app-tabs">
+      <div class="app-tab active" id="tabBuilder" onclick="setView('builder')">📋 TOS Builder</div>
+      <div class="app-tab" id="tabBank" onclick="setView('bank')">📚 Question Bank</div>
+    </div>
   </div>
 </header>
 <div class="wrap">
 
+<div class="restore-banner" id="restoreBanner" style="display:none;">
+  <span>A previous draft was auto-saved <b id="restoreTimestamp"></b>. Would you like to restore it?</span>
+  <div class="restore-actions">
+    <button class="btn btn-sm btn-primary" onclick="restoreAutosave()">Restore</button>
+    <button class="btn btn-sm" onclick="dismissAutosave()">Discard &amp; start fresh</button>
+  </div>
+</div>
+
+<div class="view active" id="view-builder">
 <!-- ① School Information -->
 <section class="card">
   <p class="card-title">① School Information</p>
@@ -228,8 +320,9 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
           <span class="term-dot"></span>1st Term
         </div>
         <div class="sa-row visible" id="sa-row-1">
-          <label class="sa-chip active" onclick="setSA(1)"><input type="radio" name="sa" value="1">SA1</label>
-          <label class="sa-chip" onclick="setSA(2)"><input type="radio" name="sa" value="2">SA2</label>
+          <label class="sa-chip active" data-assess="ST1" onclick="setAssess('ST1')">ST1</label>
+          <label class="sa-chip" data-assess="ST2" onclick="setAssess('ST2')">ST2</label>
+          <label class="sa-chip" data-assess="EXAM1" onclick="setAssess('EXAM1')">Term 1 Examination</label>
         </div>
       </div>
 
@@ -239,8 +332,9 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
           <span class="term-dot"></span>2nd Term
         </div>
         <div class="sa-row" id="sa-row-2">
-          <label class="sa-chip" onclick="setSA(3)"><input type="radio" name="sa" value="3">SA3</label>
-          <label class="sa-chip" onclick="setSA(4)"><input type="radio" name="sa" value="4">SA4</label>
+          <label class="sa-chip" data-assess="ST3" onclick="setAssess('ST3')">ST3</label>
+          <label class="sa-chip" data-assess="ST4" onclick="setAssess('ST4')">ST4</label>
+          <label class="sa-chip" data-assess="EXAM2" onclick="setAssess('EXAM2')">Term 2 Examination</label>
         </div>
       </div>
 
@@ -250,8 +344,9 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
           <span class="term-dot"></span>3rd Term
         </div>
         <div class="sa-row" id="sa-row-3">
-          <label class="sa-chip" onclick="setSA(5)"><input type="radio" name="sa" value="5">SA5</label>
-          <label class="sa-chip" onclick="setSA(6)"><input type="radio" name="sa" value="6">SA6</label>
+          <label class="sa-chip" data-assess="ST5" onclick="setAssess('ST5')">ST5</label>
+          <label class="sa-chip" data-assess="ST6" onclick="setAssess('ST6')">ST6</label>
+          <label class="sa-chip" data-assess="EXAM3" onclick="setAssess('EXAM3')">Term 3 Examination</label>
         </div>
       </div>
 
@@ -285,6 +380,28 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
   </div>
 </section>
 
+<!-- Combine two saved Summative Test drafts into a Term Examination -->
+<details class="verb-card" id="combineCard">
+  <summary>🔗 Combine two saved drafts → Term Examination <span style="font-size:12px;font-weight:400;color:#9a8e76;margin-left:8px;">(e.g. merge ST1.json + ST2.json)</span></summary>
+  <div class="verb-body">
+    <p style="font-size:13px;color:#6b5f4a;margin-bottom:14px;">Upload two Save-Draft <code>.json</code> files from the same term (e.g. ST1 and ST2). Competencies with the same name are merged — their No. of Days are summed and their objectives combined. The result loads into the table below, set to that term's <strong>Term Examination</strong>.</p>
+    <div class="grid-4" style="grid-template-columns:1fr 1fr;">
+      <div class="field">
+        <label>Summative Test A (.json)</label>
+        <input type="file" id="combineFileA" accept=".json" style="font-size:12px;">
+      </div>
+      <div class="field">
+        <label>Summative Test B (.json)</label>
+        <input type="file" id="combineFileB" accept=".json" style="font-size:12px;">
+      </div>
+    </div>
+    <div id="combineSummary" style="font-size:12.5px;margin-top:10px;"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary btn-sm" onclick="combineDrafts()">Combine into Term Examination</button>
+    </div>
+  </div>
+</details>
+
 <!-- ③ Competency Table -->
 <section class="card">
   <div class="tbl-bar">
@@ -302,10 +419,11 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
     <table class="ctbl">
       <thead>
         <tr>
-          <th style="min-width:220px;width:24%;text-align:left;padding-left:12px;">Learning Competency / Code</th>
-          <th style="min-width:178px;width:18%;">Objective 1</th>
-          <th style="min-width:178px;width:18%;">Objective 2</th>
-          <th style="min-width:178px;width:18%;">Objective 3</th>
+          <th style="min-width:220px;width:20%;text-align:left;padding-left:12px;">Learning Competency / Code</th>
+          <th style="min-width:150px;width:14%;">Lesson(s) Covered<br><span style="font-weight:400;font-size:10px;opacity:.8;">(semicolon-separated; for Bank matching)</span></th>
+          <th style="min-width:160px;width:16%;">Objective 1</th>
+          <th style="min-width:160px;width:16%;">Objective 2</th>
+          <th style="min-width:160px;width:16%;">Objective 3</th>
           <th style="min-width:72px;width:8%;">No. of Days</th>
           <th style="min-width:34px;width:4%;"></th>
         </tr>
@@ -354,7 +472,22 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
   <div class="tos-scroll"><table class="tbl-tos" id="tosTbl"></table></div>
   <div class="export-bar">
     <div class="stat-row" id="statRow"></div>
-    <button class="btn btn-primary" id="exportBtn" onclick="exportTOS()">⬇ Export TOS (.xlsx)</button>
+    <div style="display:flex;gap:9px;flex-wrap:wrap;">
+      <button class="btn btn-gold" onclick="pullFromBank()">📚 Pull Matching Questions from Bank</button>
+      <button class="btn btn-primary" id="exportBtn" onclick="exportTOS()">⬇ Export TOS (.xlsx)</button>
+    </div>
+  </div>
+</section>
+
+<!-- Assembled Test (from Question Bank) -->
+<section class="card" id="assembledCard" style="display:none;">
+  <p class="card-title">📝 Assembled Test — Pulled from Question Bank</p>
+  <p class="card-desc">Questions matched by competency and domain from your Question Bank, placed at the item numbers from the TOS.</p>
+  <div id="gapArea"></div>
+  <div id="assembledArea"></div>
+  <div class="btn-row">
+    <button class="btn btn-sm" onclick="downloadAssembledTest()">⬇ Download Assembled Test (.txt)</button>
+    <button class="btn btn-sm" onclick="downloadAssembledKey()">⬇ Download Answer Key (.txt)</button>
   </div>
 </section>
 
@@ -379,6 +512,162 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
     <span class="prompt-hint">Paste into ChatGPT · Copilot · DeepSeek · Gemini</span>
   </div>
 </section>
+
+</div><!-- /view-builder -->
+
+<div class="view" id="view-bank">
+
+<!-- Question Bank: Add Question -->
+<details class="verb-card">
+  <summary>📚 Add a Question to the Bank <span style="font-size:12px;font-weight:400;color:#9a8e76;margin-left:8px;">(click to expand)</span></summary>
+  <div class="verb-body">
+  <p class="card-desc">Tag each question with a competency and domain so it can be automatically matched to a generated TOS. Domain is auto-suggested from your question text — override it anytime.</p>
+  <div class="qb-type-tabs">
+    <button class="qb-type-tab active" id="qbtab-mcq" onclick="setQBType('mcq')">Multiple Choice</button>
+    <button class="qb-type-tab" id="qbtab-open" onclick="setQBType('open')">Open-Ended</button>
+    <button class="qb-type-tab" id="qbtab-tf" onclick="setQBType('tf')">True / False</button>
+    <button class="qb-type-tab" id="qbtab-matching" onclick="setQBType('matching')">Matching Type</button>
+  </div>
+
+  <div class="qb-grid">
+    <div class="field">
+      <label>Competency <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#b0a080;">(optional if Lesson is tagged)</span></label>
+      <input type="text" id="qb-competency" list="qbCompList" placeholder="Select or type a competency…">
+      <datalist id="qbCompList"></datalist>
+    </div>
+    <div class="field">
+      <label>Domain</label>
+      <select id="qb-domain" style="padding:8px 11px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;background:var(--paper);">
+        <option value="">— auto-suggested from text —</option>
+      </select>
+    </div>
+  </div>
+  <div class="field" style="margin-top:12px;max-width:340px;">
+    <label>Lesson <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#b0a080;">(optional — matches this to a competency's "Lesson(s) Covered" field)</span></label>
+    <input type="text" id="qb-lesson" list="qbLessonList" placeholder="e.g. Lesson 1.1">
+    <datalist id="qbLessonList"></datalist>
+  </div>
+
+  <div class="field" style="margin-top:12px;">
+    <label>Question / Item Stem</label>
+    <textarea id="qb-stem" rows="2" placeholder="Type the question…" style="width:100%;padding:8px 11px;border:1.5px solid var(--line);border-radius:8px;font-size:13.5px;font-family:'Inter',sans-serif;background:var(--paper);resize:vertical;"></textarea>
+  </div>
+
+  <!-- MCQ fields -->
+  <div id="qb-fields-mcq" style="margin-top:12px;">
+    <div class="opt-row"><input type="radio" name="qbCorrect" value="A" checked><span style="font-weight:700;width:16px;">A</span><input type="text" id="qb-optA" placeholder="Option A"></div>
+    <div class="opt-row"><input type="radio" name="qbCorrect" value="B"><span style="font-weight:700;width:16px;">B</span><input type="text" id="qb-optB" placeholder="Option B"></div>
+    <div class="opt-row"><input type="radio" name="qbCorrect" value="C"><span style="font-weight:700;width:16px;">C</span><input type="text" id="qb-optC" placeholder="Option C"></div>
+    <div class="opt-row"><input type="radio" name="qbCorrect" value="D"><span style="font-weight:700;width:16px;">D</span><input type="text" id="qb-optD" placeholder="Option D"></div>
+    <span style="font-size:11.5px;color:#9a8e76;">Select the radio button next to the correct option.</span>
+  </div>
+
+  <!-- Open-ended fields -->
+  <div id="qb-fields-open" style="margin-top:12px;display:none;">
+    <div class="field">
+      <label>Scoring Rubric / Guide</label>
+      <textarea id="qb-rubric" rows="2" placeholder="e.g. 3 points: 1 for identifying the issue, 1 for explanation, 1 for a valid example" style="width:100%;padding:8px 11px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;background:var(--paper);resize:vertical;"></textarea>
+    </div>
+  </div>
+
+  <!-- True/False fields -->
+  <div id="qb-fields-tf" style="margin-top:12px;display:none;">
+    <div class="opt-row"><input type="radio" name="qbTF" value="True" checked><span>True</span></div>
+    <div class="opt-row"><input type="radio" name="qbTF" value="False"><span>False</span></div>
+  </div>
+
+  <!-- Matching type fields -->
+  <div id="qb-fields-matching" style="margin-top:12px;display:none;">
+    <div id="qb-pairs"></div>
+    <button class="btn btn-sm" onclick="addPairRow()">+ Add pair</button>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="saveQuestion()">Save Question to Bank</button>
+    <button class="btn btn-sm" onclick="clearQBForm()">Clear form</button>
+  </div>
+  <div id="qbFormMsg" style="font-size:12.5px;margin-top:8px;"></div>
+  </div>
+</details>
+
+<!-- Question Bank: Populate via AI -->
+<section class="card">
+  <p class="card-title">🤖 Populate Bank via AI</p>
+  <p class="card-desc">Paste your existing test questions below, then copy the combined prompt into ChatGPT, Copilot, DeepSeek, or Gemini. It returns a table you can paste into Excel and upload below.</p>
+  <div class="field">
+    <label>Your test questions</label>
+    <textarea id="qbAiQuestions" rows="6" placeholder="Paste your existing test questions here — any format works (numbered list, mixed types)…" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;background:var(--paper);resize:vertical;"></textarea>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="copyQBPrompt()" id="qbAiCopyBtn">📋 Copy Prompt + My Questions</button>
+  </div>
+  <div id="qbAiMsg" style="font-size:12.5px;margin-top:8px;"></div>
+</section>
+
+<!-- Question Bank: Bulk Upload -->
+<section class="card">
+  <p class="card-title">📥 Bulk Upload Questions</p>
+  <p class="card-desc">Upload an Excel file of questions, or download a blank template to fill out offline.</p>
+  <div class="dropzone" id="qbDropzone">
+    <div style="font-size:22px;margin-bottom:5px;">📄</div>
+    <div><strong>Click to upload</strong> or drag your .xlsx file here</div>
+    <input type="file" id="qbFileInput" accept=".xlsx,.xls">
+  </div>
+  <div id="qbFilePill"></div>
+  <div class="btn-row">
+    <button class="btn btn-sm" onclick="downloadQBTemplate()">Download blank question bank template</button>
+  </div>
+</section>
+
+<!-- Question Bank: Library -->
+<section class="card">
+  <div class="tbl-bar">
+    <div>
+      <p class="card-title">📖 Question Bank Library</p>
+      <p class="card-desc" style="margin:0;">Filter, review, or remove saved questions.</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0;">
+      <button class="draft-btn" style="color:var(--maroon-deep);border-color:var(--line);background:#fff;" onclick="saveBankFile()">💾 Export Bank</button>
+      <label class="draft-btn" style="color:var(--maroon-deep);border-color:var(--line);background:#fff;display:inline-block;">
+        📂 Import Bank
+        <input type="file" id="loadBankInput" accept=".json" style="display:none;">
+      </label>
+    </div>
+  </div>
+  <div class="qb-filter-bar">
+    <div class="field">
+      <label>Filter by competency</label>
+      <input type="text" id="qbFilterComp" oninput="renderBankTable()" placeholder="Type to filter…">
+    </div>
+    <div class="field">
+      <label>Filter by domain</label>
+      <select id="qbFilterDomain" onchange="renderBankTable()">
+        <option value="">All domains</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Filter by type</label>
+      <select id="qbFilterType" onchange="renderBankTable()">
+        <option value="">All types</option>
+        <option value="mcq">Multiple Choice</option>
+        <option value="open">Open-Ended</option>
+        <option value="tf">True / False</option>
+        <option value="matching">Matching Type</option>
+      </select>
+    </div>
+    <button class="btn btn-sm btn-danger" onclick="clearBank()">Clear entire bank</button>
+  </div>
+  <div class="qb-table-scroll">
+    <table class="qbtbl">
+      <thead>
+        <tr><th>Type</th><th>Competency</th><th>Lesson</th><th>Domain</th><th>Question</th><th></th></tr>
+      </thead>
+      <tbody id="qbtbody"></tbody>
+    </table>
+  </div>
+</section>
+
+</div><!-- /view-bank -->
 
 <footer class="site-footer">
   <div class="wrap">
@@ -407,14 +696,31 @@ const DEF_VERBS={
   Creating:['arrange','assemble','build','combine','compile','compose','construct','create','design','develop','devise','formulate','generate','integrate','invent','plan','propose','rearrange','reconstruct','reorganize','revise','synthesize','write']
 };
 // SA → term mapping
-const SA_TERM={1:1,2:1,3:2,4:2,5:3,6:3};
-const TERM_SA={1:[1,2],2:[3,4],3:[5,6]};
+// Assessment codes per term: 2 Summative Tests + 1 Term Examination
+const TERM_ASSESS={1:['ST1','ST2','EXAM1'],2:['ST3','ST4','EXAM2'],3:['ST5','ST6','EXAM3']};
+function assessTermOf(code){
+  for(const t of [1,2,3]){ if(TERM_ASSESS[t].includes(code)) return t; }
+  return 1;
+}
+function isExamCode(code){ return /^EXAM/.test(code||''); }
 
 /* ── STATE ── */
 let verbs=JSON.parse(JSON.stringify(DEF_VERBS));
 let comps=[];
+let bank=[]; // question bank: [{id,type,competency,domain,stem,optA,optB,optC,optD,correct,rubric,tf,pairs}]
+let qbType='mcq';
+let qbEditingId=null; // if set, saveQuestion() updates instead of inserts
+
+/* ── VIEW / TAB SWITCHER ── */
+function setView(v){
+  document.getElementById('tabBuilder').classList.toggle('active', v==='builder');
+  document.getElementById('tabBank').classList.toggle('active', v==='bank');
+  document.getElementById('view-builder').classList.toggle('active', v==='builder');
+  document.getElementById('view-bank').classList.toggle('active', v==='bank');
+  if(v==='bank'){ refreshQBCompList(); renderBankTable(); populateQBDomainFilters(); }
+}
 let term=1;
-let sa=1;
+let assess='ST1';
 let tosData=null;
 let lastPromptMode='full';
 
@@ -434,28 +740,33 @@ function classifyAll(txt){
   return matched; // e.g. ['Understanding','Analysis'] if verb in both
 }
 
-/* ── TERM & SA SELECTION ── */
+/* ── TERM & ASSESSMENT SELECTION ── */
 function setTerm(n){
   term=n;
-  // default to first SA of the selected term
-  sa=TERM_SA[n][0];
+  // default to first Summative Test of the selected term
+  assess=TERM_ASSESS[n][0];
   document.querySelectorAll('.term-chip').forEach((el,i)=>el.classList.toggle('active',i+1===n));
   [1,2,3].forEach(t=>{
     const row=document.getElementById('sa-row-'+t);
     if(t===n){row.classList.add('visible');}
     else{row.classList.remove('visible');}
   });
-  // activate first SA chip of this term
   refreshSAChips();
 }
-function setSA(n){
-  sa=n;
+function setAssess(code){
+  assess=code;
+  term=assessTermOf(code);
+  document.querySelectorAll('.term-chip').forEach((el,i)=>el.classList.toggle('active',i+1===term));
+  [1,2,3].forEach(t=>{
+    const row=document.getElementById('sa-row-'+t);
+    if(t===term){row.classList.add('visible');}
+    else{row.classList.remove('visible');}
+  });
   refreshSAChips();
 }
 function refreshSAChips(){
   document.querySelectorAll('.sa-chip').forEach(chip=>{
-    const val=parseInt(chip.querySelector('input[type=radio]').value);
-    chip.classList.toggle('active',val===sa);
+    chip.classList.toggle('active', chip.dataset.assess===assess);
   });
 }
 
@@ -474,7 +785,7 @@ dz.addEventListener('click',()=>fi.click());
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files.length)handleFile(e.dataTransfer.files[0]);});
-fi.addEventListener('change',e=>{if(e.target.files.length)handleFile(e.target.files[0]);});
+fi.addEventListener('change',e=>{if(e.target.files.length)handleFile(e.target.files[0]);e.target.value='';});
 
 async function handleFile(file){
   const pill=document.getElementById('filePill');
@@ -483,12 +794,13 @@ async function handleFile(file){
     const buf=await file.arrayBuffer();
     const wb=new ExcelJS.Workbook(); await wb.xlsx.load(buf);
     const ws=wb.worksheets[0];
-    let hRow=-1,cCol=-1,combCol=-1; const oCols=[];
+    let hRow=-1,cCol=-1,combCol=-1,lesCol=-1; const oCols=[];
     for(let r=1;r<=Math.min(5,ws.rowCount);r++){
       ws.getRow(r).eachCell({includeEmpty:false},(cell,c)=>{
         const v=(cell.text||'').toLowerCase().trim();
         if(/learning compet/.test(v)){cCol=c;hRow=r;}
         else if(/combined/.test(v))combCol=c;
+        else if(/lesson/.test(v))lesCol=c;
         else if(/objective|knowledge|skill|attitude/.test(v))oCols.push(c);
       });
       if(hRow>0)break;
@@ -502,6 +814,7 @@ async function handleFile(file){
       const row=ws.getRow(r);
       const label=(row.getCell(cCol).text||'').toString().trim();
       if(!label||/^total/i.test(label))continue;
+      const lessons=lesCol>0?(row.getCell(lesCol).text||'').toString().trim():'';
       let objs=oCols.map(c=>(row.getCell(c).text||'').toString().trim().replace(/^>>\s*/,'')).filter(Boolean);
       if(objs.length===0){
         const ct=(row.getCell(combCol).text||'').toString().trim();
@@ -509,7 +822,7 @@ async function handleFile(file){
       }
       if(objs.length===0)continue;
       while(objs.length<3)objs.push('');
-      rows.push({id:uid(),label,objs:objs.slice(0,3),doms:objs.map(o=>classifyAll(o)).slice(0,3),days:0});
+      rows.push({id:uid(),label,lessons,objs:objs.slice(0,3),doms:objs.map(o=>classifyAll(o)).slice(0,3),days:0});
     }
     if(rows.length===0){pill.innerHTML=`<div class="file-pill" style="color:var(--warn);">⚠ No competency rows found. Check the file format.</div>`;return;}
     comps=[...comps,...rows];
@@ -523,18 +836,18 @@ async function handleFile(file){
 async function downloadSourceTemplate(){
   try{
     const wb=new ExcelJS.Workbook();const ws=wb.addWorksheet('Source');
-    ws.columns=[{width:44},{width:34},{width:34},{width:34},{width:50}];
-    const h=ws.addRow(['Learning Competency / Code','Objective 1 (Knowledge)','Objective 2 (Skills)','Objective 3 (Attitude)','Combined Objectives']);
+    ws.columns=[{width:44},{width:26},{width:34},{width:34},{width:34},{width:50}];
+    const h=ws.addRow(['Learning Competency / Code','Lesson(s) Covered','Objective 1 (Knowledge)','Objective 2 (Skills)','Objective 3 (Attitude)','Combined Objectives']);
     h.font={bold:true};
-    ws.addRow(['LO 1. Sample competency (CODE)','Identify the parts of a system','Demonstrate proper assembly procedures','Value the importance of safety','a) Identify the parts; b) Demonstrate procedures; c) Value safety.']);
-    ws.addRow(['LO 2. Another competency (CODE)','Explain common system errors','Apply troubleshooting steps','Appreciate systematic problem-solving','a) Explain errors; b) Apply steps; c) Appreciate the process.']);
+    ws.addRow(['LO 1. Sample competency (CODE)','Lesson 1.1; Lesson 1.2','Identify the parts of a system','Demonstrate proper assembly procedures','Value the importance of safety','a) Identify the parts; b) Demonstrate procedures; c) Value safety.']);
+    ws.addRow(['LO 2. Another competency (CODE)','Lesson 2.1','Explain common system errors','Apply troubleshooting steps','Appreciate systematic problem-solving','a) Explain errors; b) Apply steps; c) Appreciate the process.']);
     triggerDl(await wb.xlsx.writeBuffer(),'TOS_source_template.xlsx');
   }catch(err){alert('Could not create template: '+err.message);}
 }
 
 /* ── COMPETENCY TABLE ── */
 function addRow(){
-  comps.push({id:uid(),label:'',objs:['','',''],doms:[[],[],[]],days:0});
+  comps.push({id:uid(),label:'',lessons:'',objs:['','',''],doms:[[],[],[]],days:0});
   renderTable();
   const tbody=document.getElementById('ctbody');
   if(tbody.lastElementChild)setTimeout(()=>tbody.lastElementChild.scrollIntoView({block:'nearest',behavior:'smooth'}),50);
@@ -550,7 +863,7 @@ function renderTable(){
   tbody.innerHTML='';
   if(comps.length===0){
     const tr=document.createElement('tr');
-    const td=document.createElement('td'); td.colSpan=6;
+    const td=document.createElement('td'); td.colSpan=7;
     td.innerHTML=`<div class="empty-state"><div class="ico">📋</div><div>No competencies yet.<br>Upload a file or click <strong>+ Add row</strong> to start.</div></div>`;
     tr.appendChild(td); tbody.appendChild(tr);
     updateTotals(); updateBanner(); return;
@@ -569,7 +882,14 @@ function buildRow(c){
   taL.addEventListener('change',()=>c.label=taL.value);
   tdL.appendChild(taL); tr.appendChild(tdL);
 
-  /* Columns 2-4: objectives with multi-domain chips */
+  /* Column 2: lesson(s) covered — for Question Bank matching only */
+  const tdLes=document.createElement('td');
+  const taLes=document.createElement('textarea');
+  taLes.value=c.lessons||''; taLes.rows=3; taLes.placeholder='e.g. Lesson 1.1; Lesson 1.2';
+  taLes.addEventListener('change',()=>c.lessons=taLes.value);
+  tdLes.appendChild(taLes); tr.appendChild(tdLes);
+
+  /* Columns 3-5: objectives with multi-domain chips */
   for(let i=0;i<3;i++){
     const td=document.createElement('td');
     const ta=document.createElement('textarea'); ta.value=c.objs[i]||''; ta.rows=3; ta.placeholder=`Objective ${i+1}…`;
@@ -586,7 +906,7 @@ function buildRow(c){
     tr.appendChild(td);
   }
 
-  /* Column 5: days */
+  /* Column 6: days */
   const tdD=document.createElement('td'); tdD.className='num-cell';
   const dayInp=document.createElement('input'); dayInp.type='number'; dayInp.min='0'; dayInp.step='0.5';
   dayInp.value=c.days||''; dayInp.placeholder='0'; applyDayStyle(dayInp,c.days);
@@ -735,7 +1055,7 @@ function generateTOS(){
     const domItems=apportion(domW,rowItems);
     const domMap={};const placement=[];
     DOMAINS.forEach((d,di)=>{domMap[d]=domItems[di];if(domItems[di]>0){const s=counter,e=counter+domItems[di]-1;placement.push(`${ABBR[d]} [${s}${domItems[di]>1?'-'+e:''}]`);counter=e+1;}});
-    return{label:c.label,objectives:c.objs.filter(o=>o.trim()),days:parseFloat(c.days)||0,items:rowItems,pct:c.days/totalDays,domains:domMap,placement:placement.join('\n')};
+    return{label:c.label,lessons:c.lessons||'',objectives:c.objs.filter(o=>o.trim()),days:parseFloat(c.days)||0,items:rowItems,pct:c.days/totalDays,domains:domMap,placement:placement.join('\n')};
   });
   tosData={rows,target,totalDays,totalItems:rows.reduce((a,r)=>a+r.items,0)};
   renderPreview(tosData);
@@ -782,10 +1102,11 @@ async function exportTOS(){
     const subject=document.getElementById('si-subject').value.trim();
     const teacher=document.getElementById('si-teacher').value.trim();
 
-    // Build term string with SA label
+    // Build term string with assessment label (ST or Term Examination)
     const termNames=['1st Term','2nd Term','3rd Term'];
+    const assessLabel=isExamCode(assess) ? `Term ${term} Examination` : assess;
     const termStr=termNames.map((lbl,i)=>{
-      if(i+1===term) return `✅ ${lbl} (SA${sa})`;
+      if(i+1===term) return isExamCode(assess) ? `✅ ${lbl} — ${assessLabel}` : `✅ ${lbl} (${assess})`;
       return `____ ${lbl}`;
     }).join('    ');
 
@@ -823,7 +1144,7 @@ async function exportTOS(){
     tRow.getCell(1).value='Total';tRow.getCell(2).value=totalDays;tRow.getCell(3).value=totalItems;tRow.getCell(4).value=1;tRow.getCell(4).numFmt='0%';
     DOMAINS.forEach((d,di)=>{tRow.getCell(5+di).value=totDom[d]||0;});tRow.getCell(11).value=`Total: ${totalItems}`;
     const out=await wb.xlsx.writeBuffer();
-    const fn=`TOS_${(subject||'output').replace(/\s+/g,'_')}_SA${sa}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    const fn=`TOS_${(subject||'output').replace(/\s+/g,'_')}_${assess}_${new Date().toISOString().slice(0,10)}.xlsx`;
     triggerDl(out,fn);
   }catch(err){console.error(err);alert('Export failed: '+(err&&err.message?err.message:String(err)));}
   finally{btn.disabled=false;btn.textContent='⬇ Export TOS (.xlsx)';}
@@ -846,7 +1167,7 @@ function buildPrompt(mode){
   const teacher=document.getElementById('si-teacher').value.trim()||'[Teacher]';
   const level=document.getElementById('si-level').value;
   const termNames=['1st Term','2nd Term','3rd Term'];
-  const termLabel=`${termNames[term-1]} (SA${sa})`;
+  const termLabel=isExamCode(assess) ? `${termNames[term-1]} — Term ${term} Examination` : `${termNames[term-1]} (${assess})`;
   const school=document.getElementById('si-school').value.trim();
   // PISA-like and open-ended are counted WITHIN totalItems, not on top of it
   const mcqCount=Math.max(totalItems-2,0);
@@ -967,9 +1288,792 @@ function copyPrompt(){
   });
 }
 
+/* ── DRAFT SAVE / LOAD / AUTOSAVE ── */
+const AUTOSAVE_KEY='tos_v2_autosave';
+
+function collectState(){
+  return {
+    savedAt:new Date().toISOString(),
+    school:document.getElementById('si-school').value,
+    schoolId:document.getElementById('si-id').value,
+    level:document.getElementById('si-level').value,
+    grade:document.getElementById('si-grade').value,
+    subject:document.getElementById('si-subject').value,
+    teacher:document.getElementById('si-teacher').value,
+    term, assess,
+    targetTotal:document.getElementById('targetTotal').value,
+    oePoints:document.getElementById('oePoints').value,
+    comps:JSON.parse(JSON.stringify(comps)),
+    verbs:JSON.parse(JSON.stringify(verbs))
+  };
+}
+
+function applyState(state){
+  if(!state) return;
+  document.getElementById('si-school').value=state.school||'';
+  document.getElementById('si-id').value=state.schoolId||'';
+  if(state.level) document.getElementById('si-level').value=state.level;
+  document.getElementById('si-grade').value=state.grade||'';
+  document.getElementById('si-subject').value=state.subject||'';
+  document.getElementById('si-teacher').value=state.teacher||'';
+  document.getElementById('targetTotal').value=state.targetTotal||60;
+  document.getElementById('oePoints').value=state.oePoints||5;
+
+  verbs=state.verbs?JSON.parse(JSON.stringify(state.verbs)):JSON.parse(JSON.stringify(DEF_VERBS));
+  buildDomainGrid();
+
+  comps=state.comps?JSON.parse(JSON.stringify(state.comps)):[];
+  renderTable();
+
+  setTerm(state.term||1);
+  if(state.assess) setAssess(state.assess);
+  else if(state.sa) setAssess('ST'+state.sa); // backward-compat with older SA-numbered drafts
+
+  // Hide any stale generated output — must regenerate after restoring
+  tosData=null;
+  document.getElementById('previewCard').style.display='none';
+  document.getElementById('promptCard').style.display='none';
+  const ac=document.getElementById('assembledCard'); if(ac) ac.style.display='none';
+  assembledTest=null;
+}
+
+function saveDraftFile(){
+  try{
+    const state=collectState();
+    const json=JSON.stringify(state,null,2);
+    const blob=new Blob([json],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const subj=(state.subject||'draft').replace(/\s+/g,'_');
+    const fn=`TOS_Draft_${subj}_${new Date().toISOString().slice(0,10)}.json`;
+    const a=document.createElement('a'); a.href=url; a.download=fn; a.rel='noopener';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+    setDraftStatus(`Saved as ${fn}`);
+  }catch(err){ alert('Could not save draft: '+err.message); }
+}
+
+document.getElementById('loadDraftInput').addEventListener('change', async(e)=>{
+  const file=e.target.files[0]; if(!file) return;
+  try{
+    const text=await file.text();
+    const state=JSON.parse(text);
+    applyState(state);
+    setDraftStatus(`Loaded ${file.name}`);
+  }catch(err){
+    alert('Could not read this draft file: '+err.message);
+  }
+  e.target.value='';
+});
+
+function setDraftStatus(msg){
+  document.getElementById('draftStatus').textContent=msg;
+}
+
+function autosaveTick(){
+  try{
+    const state=collectState();
+    // Skip autosave if there's truly nothing entered yet
+    const hasContent = state.school || state.subject || state.grade || (state.comps && state.comps.length>0);
+    if(!hasContent) return;
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(state));
+    const t=new Date(state.savedAt);
+    setDraftStatus(`Autosaved ${t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`);
+  }catch(err){ /* localStorage unavailable — silently skip */ }
+}
+
+function restoreAutosave(){
+  try{
+    const raw=localStorage.getItem(AUTOSAVE_KEY);
+    if(!raw) return;
+    applyState(JSON.parse(raw));
+    document.getElementById('restoreBanner').style.display='none';
+    setDraftStatus('Restored from autosave');
+  }catch(err){ alert('Could not restore autosave: '+err.message); }
+}
+
+function dismissAutosave(){
+  try{ localStorage.removeItem(AUTOSAVE_KEY); }catch(err){}
+  document.getElementById('restoreBanner').style.display='none';
+}
+
+/* ── COMBINE TWO DRAFTS INTO A TERM EXAMINATION ── */
+async function combineDrafts(){
+  const summaryEl=document.getElementById('combineSummary');
+  const fileA=document.getElementById('combineFileA').files[0];
+  const fileB=document.getElementById('combineFileB').files[0];
+  if(!fileA||!fileB){
+    summaryEl.innerHTML='<span style="color:var(--warn);">⚠ Please choose both Summative Test A and B files.</span>';
+    return;
+  }
+  try{
+    const [stateA, stateB] = await Promise.all([
+      fileA.text().then(t=>JSON.parse(t)),
+      fileB.text().then(t=>JSON.parse(t))
+    ]);
+
+    const compsA = stateA.comps||[];
+    const compsB = stateB.comps||[];
+
+    // Merge rows with the same competency name (case/whitespace-insensitive).
+    // Matching rows: sum their days, union their objectives (max 3), recompute domains.
+    const norm = s => (s||'').trim().toLowerCase();
+    const merged = []; // [{label, objs:[3], days}]
+    const indexByNorm = {};
+
+    function addOrMerge(row){
+      const key = norm(row.label);
+      if(!key){ // untitled rows still get included individually
+        merged.push({label:row.label, objs:[...row.objs], days:parseFloat(row.days)||0});
+        return;
+      }
+      if(key in indexByNorm){
+        const existing = merged[indexByNorm[key]];
+        existing.days += parseFloat(row.days)||0;
+        // Union objectives, dedupe by trimmed text, cap at 3
+        const seen = new Set(existing.objs.map(o=>norm(o)).filter(Boolean));
+        row.objs.forEach(o=>{
+          const t=norm(o);
+          if(t && !seen.has(t) && existing.objs.filter(x=>x.trim()).length<3){
+            const emptyIdx = existing.objs.findIndex(x=>!x.trim());
+            if(emptyIdx>=0){ existing.objs[emptyIdx]=o; seen.add(t); }
+          }
+        });
+      } else {
+        indexByNorm[key]=merged.length;
+        merged.push({label:row.label, objs:[...row.objs], days:parseFloat(row.days)||0});
+      }
+    }
+
+    compsA.forEach(addOrMerge);
+    const beforeB = merged.length;
+    compsB.forEach(addOrMerge);
+    const mergedCount = (compsA.length + compsB.length) - merged.length;
+
+    // Recompute domains for all merged rows based on the union verb dictionary
+    const verbsA = stateA.verbs||DEF_VERBS;
+    const verbsB = stateB.verbs||DEF_VERBS;
+    const unionVerbs = {};
+    DOMAINS.forEach(d=>{
+      unionVerbs[d] = Array.from(new Set([...(verbsA[d]||[]), ...(verbsB[d]||[])]));
+    });
+
+    function classifyWith(txt, vset){
+      const words=(txt||'').toLowerCase().replace(/[^a-z\s]/g,' ').split(/\s+/).filter(Boolean);
+      const matched=[];
+      for(const d of DOMAINS){
+        for(const w of words){ if(vset[d].includes(w)||vset[d].includes(stem(w))){matched.push(d);break;} }
+      }
+      return matched;
+    }
+
+    const finalComps = merged.map(r=>({
+      id:uid(),
+      label:r.label,
+      objs:r.objs,
+      doms:r.objs.map(o=>classifyWith(o, unionVerbs)),
+      days:r.days
+    }));
+
+    // Term consistency check
+    const termA = stateA.term||1, termB = stateB.term||1;
+    let warnTerm = '';
+    if(termA !== termB){
+      warnTerm = ` ⚠ Note: the two drafts are from different terms (Term ${termA} vs Term ${termB}) — using Term ${termA} for the Examination.`;
+    }
+    const examTerm = termA;
+    const examCode = TERM_ASSESS[examTerm][2]; // EXAM1/EXAM2/EXAM3
+
+    const combinedState = {
+      savedAt:new Date().toISOString(),
+      school: stateA.school||'',
+      schoolId: stateA.schoolId||'',
+      level: stateA.level||'',
+      grade: stateA.grade||'',
+      subject: stateA.subject||'',
+      teacher: stateA.teacher||'',
+      term: examTerm,
+      assess: examCode,
+      targetTotal: (parseInt(stateA.targetTotal)||0) + (parseInt(stateB.targetTotal)||0) || 60,
+      oePoints: stateA.oePoints || stateB.oePoints || 5,
+      comps: finalComps,
+      verbs: unionVerbs
+    };
+
+    applyState(combinedState);
+
+    summaryEl.innerHTML = `<span style="color:var(--good);">✓ Combined ${compsA.length} (A) + ${compsB.length} (B) → <strong>${finalComps.length}</strong> unique competencies` +
+      (mergedCount>0 ? ` (${mergedCount} merged, days summed)` : '') +
+      `. Loaded as <strong>Term ${examTerm} Examination</strong>.${warnTerm}</span>`;
+    setDraftStatus('Combined from two drafts — review before generating');
+
+  }catch(err){
+    summaryEl.innerHTML = `<span style="color:var(--warn);">⚠ Could not combine drafts: ${esc(err.message||String(err))}</span>`;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   QUESTION BANK
+   ═══════════════════════════════════════════════════ */
+
+const QB_TYPE_LABEL={mcq:'MCQ', open:'Open-Ended', tf:'True/False', matching:'Matching'};
+const QB_TYPE_COLOR={mcq:'#2f5f6b', open:'#5c4a8a', tf:'#4f6b3a', matching:'#8a4a2f'};
+
+/* ── Add-Question form: type switching ── */
+function setQBType(t){
+  qbType=t;
+  ['mcq','open','tf','matching'].forEach(x=>{
+    document.getElementById('qbtab-'+x).classList.toggle('active', x===t);
+    document.getElementById('qb-fields-'+x).style.display = (x===t)?'block':'none';
+  });
+  if(t==='matching' && document.getElementById('qb-pairs').children.length===0){
+    addPairRow(); addPairRow();
+  }
+}
+
+function addPairRow(){
+  const wrap=document.getElementById('qb-pairs');
+  const row=document.createElement('div'); row.className='pair-row';
+  row.innerHTML=`<input type="text" class="qb-pair-left" placeholder="Item…"><span style="color:#9a8e76;">↔</span><input type="text" class="qb-pair-right" placeholder="Match…"><button onclick="this.parentElement.remove()">×</button>`;
+  wrap.appendChild(row);
+}
+
+/* ── Domain <select> population (shared with filter) ── */
+function populateQBDomainSelect(){
+  const sel=document.getElementById('qb-domain');
+  sel.innerHTML='<option value="">— auto-suggested from text —</option>' +
+    DOMAINS.map(d=>`<option value="${d}">${ABBR[d]} – ${d}</option>`).join('');
+}
+function populateQBDomainFilters(){
+  const sel=document.getElementById('qbFilterDomain');
+  if(sel.options.length<=1){
+    sel.innerHTML='<option value="">All domains</option>' + DOMAINS.map(d=>`<option value="${d}">${ABBR[d]} – ${d}</option>`).join('');
+  }
+}
+
+/* Auto-suggest domain as the stem is typed */
+document.getElementById('qb-stem').addEventListener('input', ()=>{
+  const domSel=document.getElementById('qb-domain');
+  if(domSel.value) return; // don't override a manual choice
+  const matches=classifyAll(document.getElementById('qb-stem').value);
+  if(matches.length>0) domSel.value=matches[0];
+});
+
+/* Competency datalist: pulled from current TOS comps + existing bank entries */
+function refreshQBCompList(){
+  const dl=document.getElementById('qbCompList');
+  const names=new Set();
+  comps.forEach(c=>{ if(c.label.trim()) names.add(c.label.trim()); });
+  bank.forEach(q=>{ if(q.competency) names.add(q.competency); });
+  dl.innerHTML=Array.from(names).map(n=>`<option value="${esc(n)}">`).join('');
+
+  const lesDl=document.getElementById('qbLessonList');
+  const lessons=new Set();
+  comps.forEach(c=>{
+    (c.lessons||'').split(';').map(s=>s.trim()).filter(Boolean).forEach(l=>lessons.add(l));
+  });
+  bank.forEach(q=>{ if(q.lesson) lessons.add(q.lesson); });
+  lesDl.innerHTML=Array.from(lessons).map(n=>`<option value="${esc(n)}">`).join('');
+}
+
+function clearQBForm(){
+  qbEditingId=null;
+  document.getElementById('qb-competency').value='';
+  document.getElementById('qb-lesson').value='';
+  document.getElementById('qb-domain').value='';
+  document.getElementById('qb-stem').value='';
+  document.getElementById('qb-optA').value='';
+  document.getElementById('qb-optB').value='';
+  document.getElementById('qb-optC').value='';
+  document.getElementById('qb-optD').value='';
+  document.querySelector('input[name=qbCorrect][value=A]').checked=true;
+  document.getElementById('qb-rubric').value='';
+  document.querySelector('input[name=qbTF][value=True]').checked=true;
+  document.getElementById('qb-pairs').innerHTML='';
+  addPairRow(); addPairRow();
+  document.getElementById('qbFormMsg').textContent='';
+}
+
+function saveQuestion(){
+  const msgEl=document.getElementById('qbFormMsg');
+  const competency=document.getElementById('qb-competency').value.trim();
+  const lesson=document.getElementById('qb-lesson').value.trim();
+  const domain=document.getElementById('qb-domain').value;
+  const stem=document.getElementById('qb-stem').value.trim();
+  if((!competency && !lesson) || !stem){
+    msgEl.innerHTML='<span style="color:var(--warn);">⚠ Question text is required, plus at least a Competency or a Lesson tag.</span>';
+    return;
+  }
+  const q={
+    id: qbEditingId || uid(),
+    type: qbType,
+    competency, lesson, domain, stem
+  };
+  if(qbType==='mcq'){
+    q.optA=document.getElementById('qb-optA').value.trim();
+    q.optB=document.getElementById('qb-optB').value.trim();
+    q.optC=document.getElementById('qb-optC').value.trim();
+    q.optD=document.getElementById('qb-optD').value.trim();
+    q.correct=document.querySelector('input[name=qbCorrect]:checked').value;
+  } else if(qbType==='open'){
+    q.rubric=document.getElementById('qb-rubric').value.trim();
+  } else if(qbType==='tf'){
+    q.tf=document.querySelector('input[name=qbTF]:checked').value;
+  } else if(qbType==='matching'){
+    const lefts=[...document.querySelectorAll('.qb-pair-left')].map(i=>i.value.trim());
+    const rights=[...document.querySelectorAll('.qb-pair-right')].map(i=>i.value.trim());
+    q.pairs=lefts.map((l,i)=>({left:l,right:rights[i]||''})).filter(p=>p.left||p.right);
+  }
+
+  if(qbEditingId){
+    const idx=bank.findIndex(x=>x.id===qbEditingId);
+    if(idx>=0) bank[idx]=q;
+    msgEl.innerHTML='<span style="color:var(--good);">✓ Question updated.</span>';
+  } else {
+    bank.push(q);
+    msgEl.innerHTML='<span style="color:var(--good);">✓ Question added to bank.</span>';
+  }
+  clearQBForm();
+  renderBankTable();
+  refreshQBCompList();
+  bankAutosaveTick();
+}
+
+function editQuestion(id){
+  const q=bank.find(x=>x.id===id); if(!q) return;
+  qbEditingId=id;
+  setQBType(q.type);
+  document.getElementById('qb-competency').value=q.competency||'';
+  document.getElementById('qb-lesson').value=q.lesson||'';
+  document.getElementById('qb-domain').value=q.domain||'';
+  document.getElementById('qb-stem').value=q.stem||'';
+  if(q.type==='mcq'){
+    document.getElementById('qb-optA').value=q.optA||'';
+    document.getElementById('qb-optB').value=q.optB||'';
+    document.getElementById('qb-optC').value=q.optC||'';
+    document.getElementById('qb-optD').value=q.optD||'';
+    const radio=document.querySelector(`input[name=qbCorrect][value="${q.correct||'A'}"]`);
+    if(radio) radio.checked=true;
+  } else if(q.type==='open'){
+    document.getElementById('qb-rubric').value=q.rubric||'';
+  } else if(q.type==='tf'){
+    const radio=document.querySelector(`input[name=qbTF][value="${q.tf||'True'}"]`);
+    if(radio) radio.checked=true;
+  } else if(q.type==='matching'){
+    document.getElementById('qb-pairs').innerHTML='';
+    (q.pairs||[]).forEach(p=>{
+      addPairRow();
+      const rows=document.querySelectorAll('.pair-row');
+      const last=rows[rows.length-1];
+      last.querySelector('.qb-pair-left').value=p.left||'';
+      last.querySelector('.qb-pair-right').value=p.right||'';
+    });
+    if((q.pairs||[]).length===0){ addPairRow(); addPairRow(); }
+  }
+  document.getElementById('qbFormMsg').innerHTML=`<span style="color:#2a4f8a;">✏️ Editing question — click "Save Question to Bank" to update.</span>`;
+  document.querySelector('.card-title').scrollIntoView({behavior:'smooth'});
+}
+
+function deleteQuestion(id){
+  bank=bank.filter(q=>q.id!==id);
+  renderBankTable();
+  bankAutosaveTick();
+}
+
+function clearBank(){
+  bank=[];
+  renderBankTable();
+  bankAutosaveTick();
+}
+
+/* ── Bank table rendering with filters ── */
+function renderBankTable(){
+  populateQBDomainFilters();
+  const compFilter=(document.getElementById('qbFilterComp').value||'').trim().toLowerCase();
+  const domFilter=document.getElementById('qbFilterDomain').value;
+  const typeFilter=document.getElementById('qbFilterType').value;
+
+  const filtered=bank.filter(q=>{
+    if(compFilter && !(q.competency||'').toLowerCase().includes(compFilter) && !(q.lesson||'').toLowerCase().includes(compFilter)) return false;
+    if(domFilter && q.domain!==domFilter) return false;
+    if(typeFilter && q.type!==typeFilter) return false;
+    return true;
+  });
+
+  const tbody=document.getElementById('qbtbody');
+  if(filtered.length===0){
+    tbody.innerHTML=`<tr><td colspan="6"><div class="qb-empty">📚 No questions yet.<br>Add one above or bulk-upload an Excel file.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML=filtered.map(q=>`
+    <tr>
+      <td><span class="qb-type-badge" style="background:${QB_TYPE_COLOR[q.type]}">${QB_TYPE_LABEL[q.type]}</span></td>
+      <td>${esc(q.competency)||'<span style="color:#c0b090;">—</span>'}</td>
+      <td>${esc(q.lesson)||'<span style="color:#c0b090;">—</span>'}</td>
+      <td>${q.domain?`${ABBR[q.domain]} – ${esc(q.domain)}`:'<span style="color:var(--warn);">none</span>'}</td>
+      <td>${esc((q.stem||'').slice(0,90))}${(q.stem||'').length>90?'…':''}</td>
+      <td class="qb-actions">
+        <button class="edit" onclick="editQuestion('${q.id}')" title="Edit">✏️</button>
+        <button class="del" onclick="deleteQuestion('${q.id}')" title="Delete">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+/* ── Bulk upload ── */
+const qbDz=document.getElementById('qbDropzone');
+const qbFi=document.getElementById('qbFileInput');
+qbDz.addEventListener('click',()=>qbFi.click());
+qbDz.addEventListener('dragover',e=>{e.preventDefault();qbDz.classList.add('drag');});
+qbDz.addEventListener('dragleave',()=>qbDz.classList.remove('drag'));
+qbDz.addEventListener('drop',e=>{e.preventDefault();qbDz.classList.remove('drag');if(e.dataTransfer.files.length)handleQBFile(e.dataTransfer.files[0]);});
+qbFi.addEventListener('change',e=>{if(e.target.files.length)handleQBFile(e.target.files[0]);e.target.value='';});
+
+async function handleQBFile(file){
+  const pill=document.getElementById('qbFilePill');
+  pill.innerHTML=`<div class="file-pill">⏳ Reading ${esc(file.name)}…</div>`;
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=new ExcelJS.Workbook(); await wb.xlsx.load(buf);
+    const ws=wb.worksheets[0];
+    let hRow=-1; const colIdx={};
+    for(let r=1;r<=Math.min(5,ws.rowCount);r++){
+      let hit=false;
+      ws.getRow(r).eachCell({includeEmpty:false},(cell,c)=>{
+        const v=(cell.text||'').toLowerCase().trim();
+        if(/^type$/.test(v)){colIdx.type=c;hit=true;}
+        else if(/competency/.test(v)) colIdx.competency=c;
+        else if(/lesson/.test(v)) colIdx.lesson=c;
+        else if(/^domain$/.test(v)) colIdx.domain=c;
+        else if(/question|stem/.test(v)) colIdx.stem=c;
+        else if(/option a/.test(v)) colIdx.optA=c;
+        else if(/option b/.test(v)) colIdx.optB=c;
+        else if(/option c/.test(v)) colIdx.optC=c;
+        else if(/option d/.test(v)) colIdx.optD=c;
+        else if(/correct/.test(v)) colIdx.correct=c;
+        else if(/rubric|points/.test(v)) colIdx.rubric=c;
+        else if(/matching pairs/.test(v)) colIdx.pairs=c;
+      });
+      if(hit){hRow=r;break;}
+    }
+    if(hRow===-1 || !colIdx.stem){ pill.innerHTML=`<div class="file-pill" style="color:var(--warn);">⚠ Could not find a header row with a "Question/Stem" column.</div>`; return; }
+
+    let added=0;
+    for(let r=hRow+1;r<=ws.rowCount;r++){
+      const row=ws.getRow(r);
+      const stem=(row.getCell(colIdx.stem).text||'').toString().trim();
+      if(!stem) continue;
+      const typeRaw=(colIdx.type?(row.getCell(colIdx.type).text||'').toString().trim().toLowerCase():'mcq');
+      const type = ['mcq','open','tf','matching'].includes(typeRaw) ? typeRaw :
+                   /open/.test(typeRaw) ? 'open' : /true|false|tf/.test(typeRaw) ? 'tf' :
+                   /match/.test(typeRaw) ? 'matching' : 'mcq';
+      const competency = colIdx.competency ? (row.getCell(colIdx.competency).text||'').toString().trim() : '';
+      const lesson = colIdx.lesson ? (row.getCell(colIdx.lesson).text||'').toString().trim() : '';
+      let domain = colIdx.domain ? (row.getCell(colIdx.domain).text||'').toString().trim() : '';
+      if(domain && !DOMAINS.includes(domain)) domain='';
+      if(!domain){ const m=classifyAll(stem); if(m.length) domain=m[0]; }
+
+      const q={id:uid(), type, competency, lesson, domain, stem};
+      if(type==='mcq'){
+        q.optA=colIdx.optA?(row.getCell(colIdx.optA).text||'').toString().trim():'';
+        q.optB=colIdx.optB?(row.getCell(colIdx.optB).text||'').toString().trim():'';
+        q.optC=colIdx.optC?(row.getCell(colIdx.optC).text||'').toString().trim():'';
+        q.optD=colIdx.optD?(row.getCell(colIdx.optD).text||'').toString().trim():'';
+        q.correct=colIdx.correct?(row.getCell(colIdx.correct).text||'').toString().trim().toUpperCase().slice(0,1)||'A':'A';
+      } else if(type==='open'){
+        q.rubric=colIdx.rubric?(row.getCell(colIdx.rubric).text||'').toString().trim():'';
+      } else if(type==='tf'){
+        const c=colIdx.correct?(row.getCell(colIdx.correct).text||'').toString().trim():'True';
+        q.tf=/false/i.test(c)?'False':'True';
+      } else if(type==='matching'){
+        const raw=colIdx.pairs?(row.getCell(colIdx.pairs).text||'').toString().trim():'';
+        q.pairs=raw.split(';').map(p=>p.split('=')).filter(p=>p.length===2).map(([l,rr])=>({left:l.trim(),right:rr.trim()}));
+      }
+      bank.push(q);
+      added++;
+    }
+    if(added===0){ pill.innerHTML=`<div class="file-pill" style="color:var(--warn);">⚠ No question rows found.</div>`; return; }
+    renderBankTable(); refreshQBCompList(); bankAutosaveTick();
+    pill.innerHTML=`<div class="file-pill">📄 ${esc(file.name)} · ${added} question${added>1?'s':''} added</div>`;
+  }catch(err){
+    pill.innerHTML=`<div class="file-pill" style="color:var(--warn);">⚠ ${esc(err.message||String(err))}</div>`;
+  }
+}
+
+/* ── AI Prompt for Populating the Bank ── */
+const QB_AI_PROMPT_TEMPLATE = `You are helping a DepEd teacher convert an existing set of test questions into a structured spreadsheet format for a Question Bank tool.
+
+TARGET COLUMNS (in this exact order)
+Type | Competency | Domain | Question/Stem | Option A | Option B | Option C | Option D | Correct Answer | Rubric/Points | Matching Pairs
+
+COLUMN RULES
+
+Type — one of exactly these four lowercase values:
+- mcq — multiple choice (4 options, 1 correct)
+- open — open-ended / essay / constructed response
+- tf — true or false
+- matching — matching type
+
+Competency — the learning competency or topic the question belongs to. If the source material states it (e.g. a heading, LO number, or unit title), use that exact wording. If not stated, infer the most likely competency from the question content, and prefix it with [INFERRED] so the teacher knows to double-check it.
+
+Domain — one of exactly these six values, matched to Revised Bloom's Taxonomy:
+- Remembering — recall, identify, name, list, define, label
+- Understanding — explain, describe, distinguish, classify, summarize, compare
+- Application — solve, apply, use, demonstrate, compute, implement
+- Analysis — analyze, differentiate, examine, categorize, break down
+- Evaluating — judge, assess, defend, justify, critique, recommend
+- Creating — design, formulate, construct, propose, compose, generate
+
+Classify based on the cognitive demand of the question, not just a keyword match — a question that says "identify" but requires comparing two complex scenarios is Analysis, not Remembering.
+
+Question/Stem — the full question text, verbatim from the source. Do not paraphrase or shorten it.
+
+Option A–D — for mcq only. Leave blank for all other types. Copy options exactly as written; do not reorder them.
+
+Correct Answer — format depends on Type:
+- mcq → the single letter: A, B, C, or D
+- tf → True or False
+- open → leave blank (scoring is via Rubric/Points instead)
+- matching → leave blank (answers are the pairs themselves)
+
+Rubric/Points — for open type only. If the source doesn't include a rubric, write a brief 2–3 criterion rubric based on what a complete answer would need to include. Leave blank for other types.
+
+Matching Pairs — for matching type only. Format as: Left1=Right1; Left2=Right2; Left3=Right3 — use a semicolon to separate pairs and an equals sign between each left/right item. Leave blank for other types.
+
+OUTPUT FORMAT
+Return the result as a markdown table using the exact column headers above, one row per question, so it can be copied straight into Excel. Do not add commentary, explanations, or extra columns. If a question doesn't clearly fit one of the four Types, make your best judgment and note your reasoning in a short list after the table, not inside it.
+
+If the source has 15+ questions, process all of them — do not truncate or summarize partway through.
+
+MY TEST QUESTIONS (below)
+`;
+
+function copyQBPrompt(){
+  const questions=document.getElementById('qbAiQuestions').value.trim();
+  const msgEl=document.getElementById('qbAiMsg');
+  if(!questions){
+    msgEl.innerHTML='<span style="color:var(--warn);">⚠ Paste your test questions first.</span>';
+    return;
+  }
+  const fullText = QB_AI_PROMPT_TEMPLATE + '\n' + questions;
+  const finish=()=>{
+    const btn=document.getElementById('qbAiCopyBtn');
+    const original=btn.textContent;
+    btn.textContent='✓ Copied!';
+    msgEl.innerHTML='<span style="color:var(--good);">✓ Prompt + your questions copied — paste into ChatGPT, Copilot, DeepSeek, or Gemini.</span>';
+    setTimeout(()=>{ btn.textContent=original; },2000);
+  };
+  navigator.clipboard.writeText(fullText).then(finish).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=fullText; ta.style.position='fixed'; ta.style.left='-9999px';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    finish();
+  });
+}
+
+async function downloadQBTemplate(){
+  try{
+    const wb=new ExcelJS.Workbook(); const ws=wb.addWorksheet('Questions');
+    ws.columns=[{width:12},{width:28},{width:16},{width:16},{width:44},{width:20},{width:20},{width:20},{width:20},{width:12},{width:34},{width:34}];
+    const h=ws.addRow(['Type','Competency','Lesson','Domain','Question/Stem','Option A','Option B','Option C','Option D','Correct Answer','Rubric/Points','Matching Pairs']);
+    h.font={bold:true};
+    ws.addRow(['mcq','LO 1. Sample competency','Lesson 1.1','Understanding','What is the main purpose of X?','Option 1','Option 2','Option 3','Option 4','A','','']);
+    ws.addRow(['open','LO 1. Sample competency','Lesson 1.2','Evaluating','Explain why X is important in this context.','','','','','','3 pts: 1 for definition, 1 for reasoning, 1 for example','']);
+    ws.addRow(['tf','LO 2. Another competency','Lesson 2.1','Remembering','X is always true under condition Y.','','','','','True','','']);
+    ws.addRow(['matching','LO 2. Another competency','Lesson 2.1','Understanding','Match each term to its correct definition.','','','','','','','Term1=Definition1; Term2=Definition2']);
+    triggerDl(await wb.xlsx.writeBuffer(),'Question_Bank_Template.xlsx');
+  }catch(err){alert('Could not create template: '+err.message);}
+}
+
+/* ── Bank Save / Load (separate from TOS drafts — persists long-term) ── */
+const BANK_AUTOSAVE_KEY='tos_v2_bank_autosave';
+
+function saveBankFile(){
+  try{
+    const json=JSON.stringify({savedAt:new Date().toISOString(), bank}, null, 2);
+    const blob=new Blob([json],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const fn=`Question_Bank_${new Date().toISOString().slice(0,10)}.json`;
+    const a=document.createElement('a'); a.href=url; a.download=fn; a.rel='noopener';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+  }catch(err){ alert('Could not export bank: '+err.message); }
+}
+
+document.getElementById('loadBankInput').addEventListener('change', async(e)=>{
+  const file=e.target.files[0]; if(!file) return;
+  try{
+    const text=await file.text();
+    const data=JSON.parse(text);
+    bank=Array.isArray(data.bank)?data.bank:(Array.isArray(data)?data:[]);
+    renderBankTable(); refreshQBCompList(); bankAutosaveTick();
+  }catch(err){ alert('Could not read this bank file: '+err.message); }
+  e.target.value='';
+});
+
+function bankAutosaveTick(){
+  try{
+    if(bank.length===0) return;
+    localStorage.setItem(BANK_AUTOSAVE_KEY, JSON.stringify({savedAt:new Date().toISOString(), bank}));
+  }catch(err){}
+}
+function loadBankAutosave(){
+  try{
+    const raw=localStorage.getItem(BANK_AUTOSAVE_KEY);
+    if(!raw) return;
+    const data=JSON.parse(raw);
+    if(Array.isArray(data.bank) && data.bank.length>0) bank=data.bank;
+  }catch(err){}
+}
+
+/* ═══════════════════════════════════════════════════
+   PULL MATCHING QUESTIONS FROM BANK → ASSEMBLED TEST
+   ═══════════════════════════════════════════════════ */
+let assembledTest=null; // {items:[{num,domain,competency,question}], gaps:[{competency,domain,count}]}
+
+function pullFromBank(){
+  if(!tosData){ alert('Generate the TOS first.'); return; }
+  const norm = s => (s||'').trim().toLowerCase();
+  const usedIds = new Set();
+  const items=[]; // {num, domain, competency, question|null}
+  const gaps=[];  // {competency, domain, count}
+  let counter=1;
+
+  tosData.rows.forEach(r=>{
+    // Build the match set for this competency row: its own name + every lesson it covers
+    const rowLessons=(r.lessons||'').split(';').map(s=>norm(s)).filter(Boolean);
+    const compNorm=norm(r.label);
+
+    DOMAINS.forEach(d=>{
+      const need=r.domains[d]||0;
+      if(need===0) return;
+      // find bank questions matching this competency (by name OR by lesson tag), not yet used
+      const pool=bank.filter(q=>{
+        if(usedIds.has(q.id) || q.domain!==d) return false;
+        const qComp=norm(q.competency);
+        const qLes=norm(q.lesson);
+        if(qComp && qComp===compNorm) return true;
+        if(qLes && rowLessons.includes(qLes)) return true;
+        return false;
+      });
+      let filled=0;
+      for(let i=0;i<need;i++){
+        const q=pool[i];
+        if(q){
+          usedIds.add(q.id);
+          items.push({num:counter, domain:d, competency:r.label, question:q});
+          filled++;
+        } else {
+          items.push({num:counter, domain:d, competency:r.label, question:null});
+        }
+        counter++;
+      }
+      if(filled<need){
+        gaps.push({competency:r.label, domain:d, count:need-filled});
+      }
+    });
+  });
+
+  assembledTest={items, gaps};
+  renderAssembled();
+}
+
+function renderAssembled(){
+  const card=document.getElementById('assembledCard');
+  card.style.display='block';
+  const gapArea=document.getElementById('gapArea');
+  const area=document.getElementById('assembledArea');
+
+  if(assembledTest.gaps.length>0){
+    gapArea.innerHTML = `<div class="banner warn">⚠ ${assembledTest.gaps.length} gap(s) — not enough matching questions in the bank. These items are left blank below; use the AI Prompt Generator (or add more to the bank) to fill them.</div>` +
+      assembledTest.gaps.map(g=>`<div class="gap-item">Missing ${g.count} ${ABBR[g.domain]}-level question${g.count>1?'s':''} for <strong>${esc(g.competency)}</strong></div>`).join('');
+  } else {
+    gapArea.innerHTML = `<div class="banner ok">✓ All items filled from the Question Bank.</div>`;
+  }
+
+  area.innerHTML = assembledTest.items.map(it=>{
+    const q=it.question;
+    let body;
+    if(!q){
+      body = `<em style="color:var(--warn);">— No matching question found in bank for ${ABBR[it.domain]} / "${esc(it.competency)}" —</em>`;
+    } else if(q.type==='mcq'){
+      body = `${esc(q.stem)}<br>A. ${esc(q.optA)} &nbsp; B. ${esc(q.optB)} &nbsp; C. ${esc(q.optC)} &nbsp; D. ${esc(q.optD)}`;
+    } else if(q.type==='open'){
+      body = `${esc(q.stem)}<br><span style="color:#8a7a5c;font-size:11.5px;">Rubric: ${esc(q.rubric||'—')}</span>`;
+    } else if(q.type==='tf'){
+      body = `${esc(q.stem)} <em>(True/False)</em>`;
+    } else if(q.type==='matching'){
+      body = `${esc(q.stem)}<br>` + (q.pairs||[]).map(p=>`${esc(p.left)} ↔ ${esc(p.right)}`).join('<br>');
+    }
+    return `<div class="assembled-q"><span class="qnum">${it.num}.</span><span style="font-size:10.5px;color:#8a7a5c;">[${ABBR[it.domain]}]</span> ${body}</div>`;
+  }).join('');
+}
+
+function downloadAssembledTest(){
+  if(!assembledTest){ alert('Pull questions from the bank first.'); return; }
+  let out='';
+  assembledTest.items.forEach(it=>{
+    const q=it.question;
+    out += `${it.num}. `;
+    if(!q){ out += `[MISSING — ${ABBR[it.domain]} / ${it.competency}]\n\n`; return; }
+    if(q.type==='mcq'){
+      out += `${q.stem}\nA. ${q.optA}\nB. ${q.optB}\nC. ${q.optC}\nD. ${q.optD}\n\n`;
+    } else if(q.type==='open'){
+      out += `${q.stem}\n\n`;
+    } else if(q.type==='tf'){
+      out += `${q.stem} (True/False)\n\n`;
+    } else if(q.type==='matching'){
+      out += `${q.stem}\n` + (q.pairs||[]).map(p=>`  ${p.left} ↔ ${p.right}`).join('\n') + `\n\n`;
+    }
+  });
+  const blob=new Blob([out],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=`Assembled_Test_${new Date().toISOString().slice(0,10)}.txt`; a.rel='noopener';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+
+function downloadAssembledKey(){
+  if(!assembledTest){ alert('Pull questions from the bank first.'); return; }
+  let out='ANSWER KEY\n\n';
+  assembledTest.items.forEach(it=>{
+    const q=it.question;
+    if(!q){ out += `${it.num}. [MISSING]\n`; return; }
+    if(q.type==='mcq'){ out += `${it.num}. ${q.correct}\n`; }
+    else if(q.type==='tf'){ out += `${it.num}. ${q.tf}\n`; }
+    else if(q.type==='open'){ out += `${it.num}. (see rubric) ${q.rubric||''}\n`; }
+    else if(q.type==='matching'){ out += `${it.num}. ` + (q.pairs||[]).map(p=>`${p.left}→${p.right}`).join(', ') + `\n`; }
+  });
+  const blob=new Blob([out],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=`Answer_Key_${new Date().toISOString().slice(0,10)}.txt`; a.rel='noopener';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+
+function checkForAutosave(){
+  try{
+    const raw=localStorage.getItem(AUTOSAVE_KEY);
+    if(!raw) return;
+    const state=JSON.parse(raw);
+    const hasContent = state.school || state.subject || state.grade || (state.comps && state.comps.length>0);
+    if(!hasContent) return;
+    const t=new Date(state.savedAt);
+    document.getElementById('restoreTimestamp').textContent=t.toLocaleString([], {dateStyle:'medium',timeStyle:'short'});
+    document.getElementById('restoreBanner').style.display='flex';
+  }catch(err){ /* ignore corrupt autosave */ }
+}
+
 /* ── INIT ── */
 buildDomainGrid();
 renderTable();
+checkForAutosave();
+populateQBDomainSelect();
+populateQBDomainFilters();
+loadBankAutosave();
+renderBankTable();
+setInterval(autosaveTick, 5000);
+window.addEventListener('beforeunload', autosaveTick);
 </script>
 </body>
 </html>
