@@ -82,9 +82,14 @@ table.ctbl td textarea,table.ctbl td input[type=number]{width:100%;border:1px so
 table.ctbl td textarea:focus,table.ctbl td input[type=number]:focus{outline:none;border-color:var(--gold);background:#fff;}
 table.ctbl td input[type=number]{width:72px;text-align:center;font-family:'JetBrains Mono',monospace;resize:none;}
 table.ctbl td.num-cell{text-align:center;vertical-align:middle;}
-/* Domain select */
-.dom-select{margin-top:5px;font-size:11px;font-weight:700;border:none;border-radius:20px;padding:3px 8px;font-family:'JetBrains Mono',monospace;color:#fff;width:100%;max-width:152px;cursor:pointer;}
-.dom-select option{background:#fff;color:var(--ink);font-family:'Inter',sans-serif;}
+/* Domain chips (multi-domain per objective) */
+.dom-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;min-height:22px;align-items:center;}
+.dom-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#fff;}
+.dom-chip .rm{background:none;border:none;color:rgba(255,255,255,.75);font-size:12px;cursor:pointer;padding:0 0 0 2px;line-height:1;font-weight:400;}
+.dom-chip .rm:hover{color:#fff;}
+.dom-add{font-size:10.5px;border:1.5px dashed var(--line);border-radius:20px;padding:2px 8px;cursor:pointer;color:#8a7a5c;background:none;font-family:'JetBrains Mono',monospace;transition:.12s;}
+.dom-add:hover{border-color:var(--gold);color:var(--maroon);}
+.dom-none{font-size:10.5px;color:#c0392b;font-weight:700;font-family:'JetBrains Mono',monospace;padding:2px 0;}
 /* Total footer */
 .total-footer{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--paper-deep);border-top:1px solid var(--line);border-radius:0 0 10px 10px;font-size:13px;}
 .total-val{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;color:var(--maroon-deep);}
@@ -411,10 +416,16 @@ let tosData=null;
 function uid(){return 'c'+Date.now()+Math.random().toString(36).slice(2,5);}
 function esc(s){return(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function stem(w){return w.replace(/(ing|edly|ed|es|s)$/,'');}
-function classify(txt){
+// Returns ALL matching domains (ordered lowest→highest) for distributing items
+function classifyAll(txt){
   const words=(txt||'').toLowerCase().replace(/[^a-z\s]/g,' ').split(/\s+/).filter(Boolean);
-  for(const w of words){for(const d of DOMAINS){if(verbs[d].includes(w)||verbs[d].includes(stem(w)))return d;}}
-  return null;
+  const matched=[];
+  for(const d of DOMAINS){
+    for(const w of words){
+      if(verbs[d].includes(w)||verbs[d].includes(stem(w))){matched.push(d);break;}
+    }
+  }
+  return matched; // e.g. ['Understanding','Analysis'] if verb in both
 }
 
 /* ── TERM & SA SELECTION ── */
@@ -492,7 +503,7 @@ async function handleFile(file){
       }
       if(objs.length===0)continue;
       while(objs.length<3)objs.push('');
-      rows.push({id:uid(),label,objs:objs.slice(0,3),doms:objs.map(o=>classify(o)),days:0});
+      rows.push({id:uid(),label,objs:objs.slice(0,3),doms:objs.map(o=>classifyAll(o)),days:0});
     }
     if(rows.length===0){pill.innerHTML=`<div class="file-pill" style="color:var(--warn);">⚠ No competency rows found. Check the file format.</div>`;return;}
     comps=[...comps,...rows];
@@ -517,7 +528,7 @@ async function downloadSourceTemplate(){
 
 /* ── COMPETENCY TABLE ── */
 function addRow(){
-  comps.push({id:uid(),label:'',objs:['','',''],doms:[null,null,null],days:0});
+  comps.push({id:uid(),label:'',objs:['','',''],doms:[[],[],[]],days:0});
   renderTable();
   const tbody=document.getElementById('ctbody');
   if(tbody.lastElementChild)setTimeout(()=>tbody.lastElementChild.scrollIntoView({block:'nearest',behavior:'smooth'}),50);
@@ -545,23 +556,28 @@ function renderTable(){
 function buildRow(c){
   const tr=document.createElement('tr');
 
-  /* Column 1: competency label – plain textarea */
+  /* Column 1: competency label */
   const tdL=document.createElement('td');
   const taL=document.createElement('textarea');
   taL.value=c.label; taL.rows=3; taL.placeholder='Type learning competency / code…';
   taL.addEventListener('change',()=>c.label=taL.value);
   tdL.appendChild(taL); tr.appendChild(tdL);
 
-  /* Columns 2-4: objectives */
+  /* Columns 2-4: objectives with multi-domain chips */
   for(let i=0;i<3;i++){
     const td=document.createElement('td');
     const ta=document.createElement('textarea'); ta.value=c.objs[i]||''; ta.rows=3; ta.placeholder=`Objective ${i+1}…`;
     ta.addEventListener('input',()=>{
-      c.objs[i]=ta.value; c.doms[i]=classify(ta.value);
-      const sel=td.querySelector('.dom-select'); if(sel)updateSel(sel,c.doms[i],c,i);
+      c.objs[i]=ta.value;
+      c.doms[i]=classifyAll(ta.value);
+      renderDomChips(td,c,i);
       updateBanner();
     });
-    td.appendChild(ta); td.appendChild(makeSel(c.doms[i],c,i)); tr.appendChild(td);
+    td.appendChild(ta);
+    const chipsDiv=document.createElement('div'); chipsDiv.className='dom-chips';
+    td.appendChild(chipsDiv);
+    renderDomChips(td,c,i);
+    tr.appendChild(td);
   }
 
   /* Column 5: days */
@@ -580,21 +596,68 @@ function buildRow(c){
   return tr;
 }
 
-function makeSel(domain,comp,idx){
-  const sel=document.createElement('select'); sel.className='dom-select';
-  const blank=document.createElement('option'); blank.value=''; blank.textContent='— domain —'; sel.appendChild(blank);
-  DOMAINS.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=`${ABBR[d]} – ${d}`;if(d===domain)o.selected=true;sel.appendChild(o);});
-  updateSel(sel,domain,comp,idx);
-  sel.addEventListener('change',()=>{comp.doms[idx]=sel.value||null;updateSel(sel,sel.value||null,comp,idx);updateBanner();});
-  return sel;
+/* Render colored domain chips for one objective cell */
+function renderDomChips(td, c, idx){
+  const wrap=td.querySelector('.dom-chips'); if(!wrap) return;
+  wrap.innerHTML='';
+  const domList=c.doms[idx]||[];
+  const hasText=(c.objs[idx]||'').trim();
+
+  if(!hasText){ return; } // empty objective – show nothing
+
+  if(domList.length===0){
+    // No match detected
+    const none=document.createElement('span'); none.className='dom-none'; none.textContent='⚠ no match';
+    wrap.appendChild(none);
+  } else {
+    // Chips for each matched domain (with weight label)
+    const N=domList.length;
+    domList.forEach((d,pos)=>{
+      const chip=document.createElement('span'); chip.className='dom-chip';
+      chip.style.background=DCOLOR[d];
+      const wt=N>1?` ×${N-pos}`:'';
+      chip.innerHTML=`${ABBR[d]}${wt}`;
+      // Remove button
+      const rm=document.createElement('button'); rm.className='rm'; rm.textContent='×'; rm.title=`Remove ${d}`;
+      rm.addEventListener('click',()=>{
+        c.doms[idx]=c.doms[idx].filter(x=>x!==d);
+        renderDomChips(td,c,idx); updateBanner();
+      });
+      chip.appendChild(rm); wrap.appendChild(chip);
+    });
+  }
+
+  // "+ Add domain" button
+  const addBtn=document.createElement('button'); addBtn.className='dom-add'; addBtn.textContent='+ domain';
+  addBtn.addEventListener('click',()=>{
+    // Show inline mini-select
+    const sel=document.createElement('select');
+    sel.style.cssText='font-size:11px;border:1px solid var(--line);border-radius:6px;padding:2px 5px;font-family:Inter,sans-serif;';
+    const blank=document.createElement('option'); blank.value=''; blank.textContent='Add…'; sel.appendChild(blank);
+    DOMAINS.filter(d=>!(c.doms[idx]||[]).includes(d)).forEach(d=>{
+      const o=document.createElement('option'); o.value=d; o.textContent=`${ABBR[d]} – ${d}`; sel.appendChild(o);
+    });
+    sel.addEventListener('change',()=>{
+      if(sel.value){
+        if(!c.doms[idx]) c.doms[idx]=[];
+        // Insert in DOMAINS order
+        const merged=[...(c.doms[idx]||[]),sel.value].sort((a,b)=>DOMAINS.indexOf(a)-DOMAINS.indexOf(b));
+        c.doms[idx]=merged;
+        renderDomChips(td,c,idx); updateBanner();
+      }
+    });
+    addBtn.replaceWith(sel); sel.focus();
+  });
+  wrap.appendChild(addBtn);
 }
-function updateSel(sel,domain,comp,idx){sel.style.background=domain?DCOLOR[domain]:'#c0392b';sel.value=domain||'';if(comp)comp.doms[idx]=domain;}
+
+
 function applyDayStyle(inp,v){inp.style.borderColor=v?'var(--line-soft)':'var(--warn)';inp.style.background=v?'var(--paper)':'#fdf0e8';}
 function updateTotals(){const t=comps.reduce((a,c)=>a+(parseFloat(c.days)||0),0);document.getElementById('totalDays').textContent=t;}
 function updateBanner(){
   const area=document.getElementById('flagArea');
   let u=0,n=0;
-  comps.forEach(c=>{c.objs.forEach((o,i)=>{if(o.trim()&&!c.doms[i])u++;});if(!c.days)n++;});
+  comps.forEach(c=>{c.objs.forEach((o,i)=>{if(o.trim()&&(!c.doms[i]||c.doms[i].length===0))u++;});if(!c.days)n++;});
   const msgs=[];
   if(u>0)msgs.push(`${u} objective${u>1?'s':''} missing a domain — assign via dropdown.`);
   if(n>0&&comps.length>0)msgs.push(`${n} competenc${n>1?'ies':'y'} has no No. of Days.`);
@@ -625,7 +688,7 @@ function renderChips(d,grid){
   wrap.querySelectorAll('[data-rm]').forEach(b=>{b.addEventListener('click',()=>{const[dd,vv]=b.dataset.rm.split('|');verbs[dd]=verbs[dd].filter(x=>x!==vv);buildDomainGrid();reclassify();});});
 }
 function resetVerbs(){verbs=JSON.parse(JSON.stringify(DEF_VERBS));buildDomainGrid();reclassify();}
-function reclassify(){comps.forEach(c=>{c.objs.forEach((o,i)=>{c.doms[i]=classify(o);});});renderTable();}
+function reclassify(){comps.forEach(c=>{c.objs.forEach((o,i)=>{c.doms[i]=classifyAll(o);});});renderTable();}
 
 /* ── APPORTIONMENT ── */
 function apportion(weights,total){
@@ -651,7 +714,17 @@ function generateTOS(){
   const itemsPerRow=apportion(comps.map(c=>c.days||0),target);
   let counter=1;
   const rows=comps.map((c,i)=>{
-    const domW=DOMAINS.map(d=>c.doms.filter((dd,oi)=>dd===d&&c.objs[oi].trim()).length);
+    // Weighted multi-domain distribution:
+    // If an objective matches N domains, lower domains get more weight (N, N-1, … 1)
+    const domWeights={};
+    DOMAINS.forEach(d=>domWeights[d]=0);
+    c.objs.forEach((obj,oi)=>{
+      if(!obj.trim()) return;
+      const domList=c.doms[oi]||[];
+      const N=domList.length;
+      domList.forEach((d,pos)=>{domWeights[d]+=(N-pos);});
+    });
+    const domW=DOMAINS.map(d=>domWeights[d]);
     const rowItems=itemsPerRow[i];
     const domItems=apportion(domW,rowItems);
     const domMap={};const placement=[];
