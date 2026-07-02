@@ -432,8 +432,9 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
 </section>
 
 <!-- ② Add Competencies -->
-<section class="card">
-  <p class="card-title">② Add Competencies</p>
+<details class="verb-card" open>
+  <summary>② Add Competencies <span style="font-size:12px;font-weight:400;color:#9a8e76;margin-left:8px;">(click to collapse)</span></summary>
+  <div class="verb-body">
   <p class="card-desc">Upload an Excel source file to auto-populate the table below, or switch to Manual to encode rows directly. Both modes share the same editable table.</p>
   <div class="mode-tabs">
     <button class="mode-tab active" id="tab-upload" onclick="setMode('upload')">📂 Upload Excel file</button>
@@ -455,7 +456,8 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
     <p style="font-size:13px;color:#6b5f4a;margin-bottom:10px;">Click <strong>+ Add row</strong> below and type competency names and objectives directly into the table.</p>
     <button class="btn btn-primary btn-sm" onclick="addRow()">+ Add row</button>
   </div>
-</section>
+  </div>
+</details>
 
 <!-- Combine two saved Summative Test drafts into a Term Examination -->
 <details class="verb-card" id="combineCard">
@@ -807,12 +809,12 @@ let comps=[];
    SETUP REQUIRED: paste your own Firebase project config below.
    See the separate "Firebase Setup Guide" document for exact steps. */
 const firebaseConfig = {
-  apiKey: "AIzaSyBxZRg7NBXfeAyv6-lvqK5n25YYCcn93ys",
-  authDomain: "snhs-tos-generator.firebaseapp.com",
-  projectId: "snhs-tos-generator",
-  storageBucket: "snhs-tos-generator.firebasestorage.app",
-  messagingSenderId: "118810613515",
-  appId: "1:118810613515:web:e23d5a5992f0bff60ff40e"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 const ALLOWED_EMAIL_DOMAIN = "deped.gov.ph"; // change to your school's email domain
 
@@ -2219,6 +2221,10 @@ function showAuthMsg(msg){
 }
 
 function signInWithGoogle(){
+  if(location.protocol === 'file:'){
+    showAuthMsg('⚠ This app must be opened from a web address (http/https), not a local file, for Sign-In to work. See "Part 6.5 — Hosting the App" in the Setup Guide.');
+    return;
+  }
   if(!fbReady){ showAuthMsg('⚠ Firebase is not configured yet — see the setup guide.'); return; }
   const provider = new firebase.auth.GoogleAuthProvider();
   fbAuth.signInWithPopup(provider).catch(err=>{
