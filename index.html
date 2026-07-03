@@ -642,6 +642,10 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
     <button class="btn btn-sm" onclick="buildPrompt('compact')">Compact prompt</button>
     <button class="btn btn-sm" onclick="buildPrompt('filipino')">Tagalog version</button>
     <div class="field" style="width:150px;">
+      <label>PISA pts / sub-item</label>
+      <input type="number" id="pisaPointsPerSub" min="1" step="1" value="1" oninput="buildPrompt(lastPromptMode)">
+    </div>
+    <div class="field" style="width:150px;">
       <label>Open-ended points</label>
       <input type="number" id="oePoints" min="1" step="1" value="5" oninput="buildPrompt(lastPromptMode)">
     </div>
@@ -1450,6 +1454,7 @@ function buildPrompt(mode){
   if(!tosData){return;}
   lastPromptMode=mode;
   const oePts=parseInt(document.getElementById('oePoints').value)||5;
+  const pisaPtsPerSub=parseInt(document.getElementById('pisaPointsPerSub').value)||1;
   const {rows,target,totalDays,totalItems}=tosData;
   const subject=document.getElementById('si-subject').value.trim()||'[Subject]';
   const grade=document.getElementById('si-grade').value.trim()||'[Grade Level & Section]';
@@ -1507,6 +1512,7 @@ function buildPrompt(mode){
     prompt += `   • Write at least 2 sub-items (a, b, c) that require interpretation, inference, or application of the passage/data.\n`;
     prompt += `   • Align to Analysis or Evaluating level.\n`;
     prompt += `   • Context should be relevant to ${subject} and ${grade} learners.\n`;
+    prompt += `   • Scoring: ${pisaPtsPerSub} point${pisaPtsPerSub>1?'s':''} per sub-item (e.g. 3 sub-items = ${pisaPtsPerSub*3} points total for this item). State the per-sub-item answer key.\n`;
     prompt += `\n`;
     prompt += `ITEM #${oeNum} — Open-Ended Question (counted within the ${totalItems} total, worth ${oePts} point${oePts>1?'s':''})\n`;
     prompt += `   • Require a written or constructed response (not multiple-choice).\n`;
@@ -1525,7 +1531,7 @@ function buildPrompt(mode){
       prompt += `   Placement: ${r.placement.replace(/\n/g,', ')}\n\n`;
     });
     prompt += `Include an answer key for items 1–${mcqCount}. Align question difficulty to the domain (R=recall, U=explain, App=apply, An=analyze, Ev=evaluate, C=create).\n`;
-    prompt += `\nItem #${pisaNum} = PISA-like (scenario/data + 2+ sub-items, Analysis/Evaluating level). Item #${oeNum} = open-ended/constructed-response worth ${oePts} point${oePts>1?'s':''} (SIMPLE rubric, 3 short criteria, highest domain in TOS). Both placed before the Answer Key, within the ${totalItems} total — not additional.`;
+    prompt += `\nItem #${pisaNum} = PISA-like (scenario/data + 2+ sub-items, Analysis/Evaluating level, scored at ${pisaPtsPerSub} point${pisaPtsPerSub>1?'s':''} per sub-item). Item #${oeNum} = open-ended/constructed-response worth ${oePts} point${oePts>1?'s':''} (SIMPLE rubric, 3 short criteria, highest domain in TOS). Both placed before the Answer Key, within the ${totalItems} total — not additional.`;
 
   } else if(mode==='filipino'){
     prompt += `Ikaw ay isang tagapagsulat ng mga pagsubok na nakahanay sa kurikulum ng DepEd para sa ${level}.\n`;
@@ -1553,6 +1559,7 @@ function buildPrompt(mode){
     prompt += `   • Maglaan ng maikling sipi, talaan ng datos, graph, o tunay na sitwasyon.\n`;
     prompt += `   • Sumulat ng hindi bababa sa 2 sub-tanong (a, b, c) na nangangailangan ng interpretasyon o pagsusuri.\n`;
     prompt += `   • Iayon sa antas ng Pagsusuri o Pagsasuri.\n`;
+    prompt += `   • Puntos: ${pisaPtsPerSub} puntos bawat sub-tanong. Isama ang susi sa sagot bawat sub-tanong.\n`;
     prompt += `AYTEM #${oeNum} — Bukas na Tanong (kasama sa ${totalItems} total, ${oePts} puntos)\n`;
     prompt += `   • Nangangailangan ng nakasulat na sagot, paliwanag, o pagpapatunay.\n`;
     prompt += `   • Isama ang ISANG SIMPLENG rubric ng pagmamarka (3 maikling pamantayan lamang, hindi kumplikado).\n`;
