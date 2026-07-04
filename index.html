@@ -3238,31 +3238,41 @@ async function generateAllMakerItems(){
   const slots=buildMakerSlots().filter(s=>!isSlotDone(s)); // only fill items not already written, so manual work is never overwritten
   if(slots.length===0){ statusEl.textContent='All items are already written — nothing to generate.'; return; }
   btn.disabled=true;
-  statusEl.textContent=`✨ Generating ${slots.length} item(s)… this may take a moment.`;
+  // Send items in small batches rather than one giant request — smaller payloads are
+  // less likely to be blocked by network filters, less likely to hit Gemini's own
+  // response-size limits, and if one batch fails, everything generated so far is kept.
+  const CHUNK_SIZE=6;
+  const chunks=[];
+  for(let i=0;i<slots.length;i+=CHUNK_SIZE){ chunks.push(slots.slice(i,i+CHUNK_SIZE)); }
+  let totalGenerated=0;
   try{
-    const results=await callGemini(buildAllItemsPrompt(slots));
-    results.forEach(r=>{
-      const num=r.num;
-      if(!testItems[num]) testItems[num]={};
-      if(r.kind==='pisa'){
-        testItems[num].passage=r.passage||'';
-        testItems[num].subItems=(r.subItems||[]).map(s=>({text:s.text||'',answer:s.answer||''}));
-      } else if(r.kind==='open'){
-        testItems[num].stem=r.stem||'';
-        testItems[num].rubric=r.rubric||'';
-      } else {
-        testItems[num].type=r.type||'mcq';
-        testItems[num].stem=r.stem||'';
-        if(r.type==='tf'){ testItems[num].tf=r.tf||'True'; }
-        else if(r.type==='matching'){ testItems[num].pairs=(r.pairs||[]).map(p=>({left:p.left||'',right:p.right||''})); }
-        else { testItems[num].optA=r.optA||''; testItems[num].optB=r.optB||''; testItems[num].optC=r.optC||''; testItems[num].optD=r.optD||''; testItems[num].correct=r.correct||'A'; }
-      }
-    });
-    makerAutosave();
-    renderTestMaker();
-    statusEl.textContent=`✓ Generated ${results.length} item(s). Review each one and edit as needed.`;
+    for(let c=0;c<chunks.length;c++){
+      statusEl.textContent=`✨ Generating batch ${c+1} of ${chunks.length} (${chunks[c].length} item${chunks[c].length>1?'s':''})…`;
+      const results=await callGemini(buildAllItemsPrompt(chunks[c]));
+      results.forEach(r=>{
+        const num=r.num;
+        if(!testItems[num]) testItems[num]={};
+        if(r.kind==='pisa'){
+          testItems[num].passage=r.passage||'';
+          testItems[num].subItems=(r.subItems||[]).map(s=>({text:s.text||'',answer:s.answer||''}));
+        } else if(r.kind==='open'){
+          testItems[num].stem=r.stem||'';
+          testItems[num].rubric=r.rubric||'';
+        } else {
+          testItems[num].type=r.type||'mcq';
+          testItems[num].stem=r.stem||'';
+          if(r.type==='tf'){ testItems[num].tf=r.tf||'True'; }
+          else if(r.type==='matching'){ testItems[num].pairs=(r.pairs||[]).map(p=>({left:p.left||'',right:p.right||''})); }
+          else { testItems[num].optA=r.optA||''; testItems[num].optB=r.optB||''; testItems[num].optC=r.optC||''; testItems[num].optD=r.optD||''; testItems[num].correct=r.correct||'A'; }
+        }
+        totalGenerated++;
+      });
+      makerAutosave();
+      renderTestMaker();
+    }
+    statusEl.textContent=`✓ Generated ${totalGenerated} item(s) across ${chunks.length} batch${chunks.length>1?'es':''}. Review each one and edit as needed.`;
   }catch(err){
-    statusEl.textContent='⚠ '+err.message;
+    statusEl.textContent=`⚠ ${err.message} — ${totalGenerated} item(s) already generated and saved before this happened. Click Generate All again to continue with the rest.`;
   }finally{
     btn.disabled=false;
   }
