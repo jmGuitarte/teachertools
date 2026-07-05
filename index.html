@@ -621,11 +621,12 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
 <!-- ⑤ Generate -->
 <section class="card">
   <p class="card-title">⑤ Generate TOS</p>
-  <p class="card-desc">Items distributed proportionally by No. of Days using largest-remainder — always hits your exact target.</p>
+  <p class="card-desc">Items distributed proportionally by No. of Days using largest-remainder — always hits your exact target. If PISA-like or Open-Ended items are worth more than 1 point, total item count and total points can differ — both are shown separately after generating.</p>
   <div class="gen-row">
     <div class="field">
-      <label>Target total items</label>
+      <label>Target Total Points</label>
       <input type="number" id="targetTotal" min="1" value="60" style="width:120px;">
+      <span style="font-size:11px;color:#9a8e76;">= Total items if every item is worth 1 point</span>
     </div>
     <div class="field">
       <label>Export template override (optional)</label>
@@ -634,6 +635,42 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
     </div>
     <button class="btn btn-gold" onclick="generateTOS()" style="height:38px;align-self:flex-end;">Generate TOS →</button>
   </div>
+
+  <div style="margin-top:14px;">
+    <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#8a7a5c;display:block;margin-bottom:8px;">Special Items (optional)</label>
+    <div class="qb-grid">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;flex-wrap:wrap;">
+        <input type="checkbox" id="includePisaCheckbox" checked onchange="toggleSpecialItemFields()" style="width:16px;height:16px;flex-shrink:0;">
+        <label style="margin:0;flex:1;min-width:140px;font-size:13px;">Include PISA-like question</label>
+        <select id="pisaDomainSelect" style="width:150px;font-size:12.5px;">
+          <option value="Remembering">Remembering</option>
+          <option value="Understanding">Understanding</option>
+          <option value="Application">Application</option>
+          <option value="Analysis" selected>Analysis</option>
+          <option value="Evaluating">Evaluating</option>
+          <option value="Creating">Creating</option>
+        </select>
+        <input type="number" id="pisaPointsValue" min="1" value="2" style="width:60px;" title="Points this item is worth">
+        <span style="font-size:11px;color:#9a8e76;">pts</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;flex-wrap:wrap;">
+        <input type="checkbox" id="includeOECheckbox" checked onchange="toggleSpecialItemFields()" style="width:16px;height:16px;flex-shrink:0;">
+        <label style="margin:0;flex:1;min-width:140px;font-size:13px;">Include Open-Ended question</label>
+        <select id="oeDomainSelect" style="width:150px;font-size:12.5px;">
+          <option value="Remembering">Remembering</option>
+          <option value="Understanding">Understanding</option>
+          <option value="Application">Application</option>
+          <option value="Analysis">Analysis</option>
+          <option value="Evaluating" selected>Evaluating</option>
+          <option value="Creating">Creating</option>
+        </select>
+        <input type="number" id="oePointsValue" min="1" value="5" style="width:60px;" title="Points this item is worth">
+        <span style="font-size:11px;color:#9a8e76;">pts</span>
+      </div>
+    </div>
+    <p style="font-size:11.5px;color:#9a8e76;margin-top:7px;">Neither has one fixed cognitive domain — PISA-like commonly leans Analysis/Evaluating and Open-Ended commonly covers whichever domain is highest in your TOS, but this is a convention, not a rule. Uncheck either to leave it out of this test entirely.</p>
+  </div>
+
   <div style="margin-top:14px;">
     <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#8a7a5c;display:block;margin-bottom:8px;">Domain Distribution Method</label>
     <div class="term-row" style="margin-top:0;">
@@ -1194,6 +1231,15 @@ function setDistMode(mode){
   document.getElementById('distMode-preset').classList.toggle('active', mode==='preset');
 }
 
+function toggleSpecialItemFields(){
+  const pisaOn=document.getElementById('includePisaCheckbox').checked;
+  const oeOn=document.getElementById('includeOECheckbox').checked;
+  document.getElementById('pisaDomainSelect').disabled=!pisaOn;
+  document.getElementById('pisaPointsValue').disabled=!pisaOn;
+  document.getElementById('oeDomainSelect').disabled=!oeOn;
+  document.getElementById('oePointsValue').disabled=!oeOn;
+}
+
 function generateTOS(){
   const errEl=document.getElementById('genError'); errEl.style.display='none';
   if(comps.length===0){errEl.textContent='Add at least one competency.';errEl.style.display='block';return;}
@@ -1201,11 +1247,20 @@ function generateTOS(){
   if(totalDays<=0){errEl.textContent='Assign No. of Days to at least one competency.';errEl.style.display='block';return;}
   const target=parseInt(document.getElementById('targetTotal').value)||0;
   if(target<=0){errEl.textContent='Enter a valid target item count.';errEl.style.display='block';return;}
-  // Reserve the last 2 items for the PISA-like and Open-Ended questions BEFORE apportioning
-  // domains, so their item numbers never overlap with a competency's domain range.
-  const mcqCount=Math.max(target-2,0);
-  const pisaNum=mcqCount+1;
-  const oeNum=mcqCount+2;
+  // PISA-like and Open-Ended are each optional and can be worth more than 1 point.
+  // Reserve their combined POINT value (not a flat item count) before apportioning
+  // domains — so if either is worth more than 1 point, fewer domain items fit within
+  // the same target, and total item count can end up lower than the target points.
+  const includePisa = document.getElementById('includePisaCheckbox').checked;
+  const includeOE = document.getElementById('includeOECheckbox').checked;
+  const pisaPoints = includePisa ? Math.max(parseInt(document.getElementById('pisaPointsValue').value)||1, 1) : 0;
+  const oePoints = includeOE ? Math.max(parseInt(document.getElementById('oePointsValue').value)||1, 1) : 0;
+  const pisaDomain = includePisa ? document.getElementById('pisaDomainSelect').value : null;
+  const oeDomain = includeOE ? document.getElementById('oeDomainSelect').value : null;
+  const mcqCount=Math.max(target-pisaPoints-oePoints,0);
+  const pisaNum = includePisa ? mcqCount+1 : null;
+  const oeNum = includeOE ? (includePisa ? mcqCount+2 : mcqCount+1) : null;
+  const totalItems = mcqCount + (includePisa?1:0) + (includeOE?1:0); // may be less than target once a multi-point item is included
   const itemsPerRow=apportion(comps.map(c=>c.days||0),mcqCount);
   let counter=1;
   const domainRanges={}; DOMAINS.forEach(d=>domainRanges[d]=[]);
@@ -1242,15 +1297,19 @@ function generateTOS(){
     DOMAINS.forEach((d,di)=>{domMap[d]=domItems[di];if(domItems[di]>0){const s=counter,e=counter+domItems[di]-1;placement.push(`${ABBR[d]} [${s}${domItems[di]>1?'-'+e:''}]`);domainRanges[d].push([s,e]);placementRanges.push({domain:d,start:s,end:e});counter=e+1;}});
     return{label:c.label,lessons:c.lessons||'',objectives:c.objs.filter(o=>o.trim()),days:parseFloat(c.days)||0,items:rowItems,pct:c.days/totalDays,domains:domMap,placement:placement.join('\n'),placementRanges};
   });
-  const totalItems=target;
-  tosData={rows,target,totalDays,totalItems,domainRanges,mcqCount,pisaNum,oeNum};
+  tosData={rows,target,totalDays,totalItems,domainRanges,mcqCount,pisaNum,oeNum,pisaPoints,oePoints,pisaDomain,oeDomain};
   loadedCloudTestMeta=null; currentCloudTestId=null; // generating a new TOS always reverts Test Maker to live mode
   renderPreview(tosData);
   const subBtn=document.getElementById('submitReviewBtn');
   if(subBtn) subBtn.style.display = currentUser ? 'inline-block' : 'none';
 }
-function renderPreview({rows,target,totalDays,totalItems,domainRanges,mcqCount,pisaNum,oeNum}){
+function renderPreview({rows,target,totalDays,totalItems,domainRanges,mcqCount,pisaNum,oeNum,pisaPoints,oePoints,pisaDomain,oeDomain}){
   const totDom={};DOMAINS.forEach(d=>{totDom[d]=rows.reduce((a,r)=>a+(r.domains[d]||0),0);});
+  // PISA-like/Open-Ended aren't tied to any specific competency row, but their chosen
+  // domain still gets +1 item counted toward that domain's footer total, so the "Total"
+  // row's domain columns accurately reflect where every item in the test actually sits.
+  if(pisaDomain) totDom[pisaDomain]=(totDom[pisaDomain]||0)+1;
+  if(oeDomain) totDom[oeDomain]=(totDom[oeDomain]||0)+1;
   const tbl=document.getElementById('tosTbl');
   let h=`<thead><tr><th>Learning Competencies and Codes</th><th>No. of Days</th><th>No. of Items</th><th>%</th>`;
   DOMAINS.forEach(d=>{
@@ -1265,11 +1324,20 @@ function renderPreview({rows,target,totalDays,totalItems,domainRanges,mcqCount,p
     DOMAINS.forEach(d=>h+=`<td class="num">${r.domains[d]||''}</td>`);
     h+=`<td class="placement">${esc(r.placement)}</td></tr>`;
   });
+  // Build the Total row's item-placement note, conditionally, since PISA-like and
+  // Open-Ended are each optional and may not both exist.
+  const specialParts=[];
+  if(pisaNum) specialParts.push(`#${pisaNum} PISA-like (${pisaDomain}, ${pisaPoints} pt${pisaPoints>1?'s':''})`);
+  if(oeNum) specialParts.push(`#${oeNum} Open-Ended (${oeDomain}, ${oePoints} pt${oePoints>1?'s':''})`);
+  const specialReserved=(pisaPoints||0)+(oePoints||0);
+  const totalNote = specialParts.length
+    ? `Total: ${mcqCount} + ${specialReserved} (${specialParts.join(', ')}) = ${totalItems} items, ${target} points`
+    : `Total: ${totalItems} items, ${target} points`;
   h+=`<tr class="total-row"><td>Total</td><td class="num">${totalDays}</td><td class="num">${mcqCount}</td><td class="num">100%</td>`;
   DOMAINS.forEach(d=>h+=`<td class="num">${totDom[d]}</td>`);
-  h+=`<td class="placement">Total: ${mcqCount} + 2 (#${pisaNum} PISA-like, #${oeNum} Open-Ended) = ${totalItems}</td></tr></tbody>`;
+  h+=`<td class="placement">${totalNote}</td></tr></tbody>`;
   tbl.innerHTML=h;
-  document.getElementById('statRow').innerHTML=`<div class="stat">Competencies<b>${rows.length}</b></div><div class="stat">Total Days<b>${totalDays}</b></div><div class="stat">Target Items<b>${target}</b></div><div class="stat">Allocated<b>${mcqCount}</b></div>`;
+  document.getElementById('statRow').innerHTML=`<div class="stat">Competencies<b>${rows.length}</b></div><div class="stat">Total Days<b>${totalDays}</b></div><div class="stat">Total Items<b>${totalItems}</b></div><div class="stat">Total Points<b>${target}</b></div>`;
   const card=document.getElementById('previewCard');card.style.display='block';
   setTimeout(()=>card.scrollIntoView({behavior:'smooth',block:'start'}),100);
 }
@@ -1280,7 +1348,7 @@ async function exportTOS(){
   const btn=document.getElementById('exportBtn');btn.disabled=true;btn.textContent='Preparing…';
   try{
     if(!tosData)throw new Error('Generate the TOS first.');
-    const{rows,totalDays,totalItems,mcqCount,pisaNum,oeNum}=tosData; const COLS=11;
+    const{rows,totalDays,totalItems,target,mcqCount,pisaNum,oeNum,pisaPoints,oePoints,pisaDomain,oeDomain}=tosData; const COLS=11;
     const tmplFile=document.getElementById('templateFile');
     const defaultB64 = distMode==='preset' ? TPL_PRESET_B64 : TPL_B64;
     const buf=tmplFile&&tmplFile.files&&tmplFile.files.length?await tmplFile.files[0].arrayBuffer():b64ToAB(defaultB64);
@@ -1365,6 +1433,8 @@ async function exportTOS(){
     function appSty(rn,sty){for(let c=1;c<=COLS;c++){const cell=ws.getRow(rn).getCell(c);const s=sty[c-1];if(s.font)cell.font=s.font;if(s.alignment)cell.alignment=s.alignment;if(s.border)cell.border=s.border;if(s.fill)cell.fill=s.fill;if(s.numFmt)cell.numFmt=s.numFmt;}}
     let cursor=newTotRow;
     const totDom={};DOMAINS.forEach(d=>{totDom[d]=rows.reduce((a,r)=>a+(r.domains[d]||0),0);});
+    if(pisaDomain) totDom[pisaDomain]=(totDom[pisaDomain]||0)+1;
+    if(oeDomain) totDom[oeDomain]=(totDom[oeDomain]||0)+1;
     rows.forEach(r=>{
       if(useTR){appSty(cursor,titleSty);try{ws.mergeCells(cursor,1,cursor,COLS);}catch(e){}cursor++;}
       appSty(cursor,dataSty);
@@ -1379,7 +1449,14 @@ async function exportTOS(){
     });
     const tRow=ws.getRow(cursor);
     tRow.getCell(1).value='Total';tRow.getCell(2).value=totalDays;tRow.getCell(3).value=mcqCount;tRow.getCell(4).value=1;tRow.getCell(4).numFmt='0%';
-    DOMAINS.forEach((d,di)=>{tRow.getCell(5+di).value=totDom[d]||0;});tRow.getCell(11).value=`Total: ${mcqCount} + 2 (Items #${pisaNum} PISA-like, #${oeNum} Open-Ended) = ${totalItems}`;
+    DOMAINS.forEach((d,di)=>{tRow.getCell(5+di).value=totDom[d]||0;});
+    const exportSpecialParts=[];
+    if(pisaNum) exportSpecialParts.push(`#${pisaNum} PISA-like (${pisaDomain}, ${pisaPoints} pt${pisaPoints>1?'s':''})`);
+    if(oeNum) exportSpecialParts.push(`#${oeNum} Open-Ended (${oeDomain}, ${oePoints} pt${oePoints>1?'s':''})`);
+    const exportSpecialReserved=(pisaPoints||0)+(oePoints||0);
+    tRow.getCell(11).value = exportSpecialParts.length
+      ? `Total: ${mcqCount} + ${exportSpecialReserved} (${exportSpecialParts.join(', ')}) = ${totalItems} items, ${target} points`
+      : `Total: ${totalItems} items, ${target} points`;
     applyDiffFill(tRow);
     const out=await wb.xlsx.writeBuffer();
     const fn=`TOS_${(subject||'output').replace(/\s+/g,'_')}_${assess}_${new Date().toISOString().slice(0,10)}.xlsx`;
@@ -1408,6 +1485,12 @@ function collectState(){
     teacher:document.getElementById('si-teacher').value,
     term, assess,
     targetTotal:document.getElementById('targetTotal').value,
+    includePisa: document.getElementById('includePisaCheckbox').checked,
+    pisaPoints: document.getElementById('pisaPointsValue').value,
+    pisaDomain: document.getElementById('pisaDomainSelect').value,
+    includeOE: document.getElementById('includeOECheckbox').checked,
+    oePoints: document.getElementById('oePointsValue').value,
+    oeDomain: document.getElementById('oeDomainSelect').value,
     comps:JSON.parse(JSON.stringify(comps)),
     verbs:JSON.parse(JSON.stringify(verbs))
   };
@@ -1424,6 +1507,15 @@ function applyState(state){
   document.getElementById('si-subject').value=state.subject||'';
   document.getElementById('si-teacher').value=state.teacher||'';
   document.getElementById('targetTotal').value=state.targetTotal||60;
+  // Default to enabled/on for drafts saved before this feature existed, so old
+  // drafts keep behaving exactly as they did before (both items always included).
+  document.getElementById('includePisaCheckbox').checked = state.includePisa!==undefined ? state.includePisa : true;
+  document.getElementById('pisaPointsValue').value = state.pisaPoints || 2;
+  document.getElementById('pisaDomainSelect').value = state.pisaDomain || 'Analysis';
+  document.getElementById('includeOECheckbox').checked = state.includeOE!==undefined ? state.includeOE : true;
+  document.getElementById('oePointsValue').value = state.oePoints || 5;
+  document.getElementById('oeDomainSelect').value = state.oeDomain || 'Evaluating';
+  toggleSpecialItemFields();
 
   verbs=state.verbs?JSON.parse(JSON.stringify(state.verbs)):JSON.parse(JSON.stringify(DEF_VERBS));
   buildDomainGrid();
@@ -1699,6 +1791,12 @@ async function combineDrafts(){
       term: examTerm,
       assess: examCode,
       targetTotal: (parseInt(stateA.targetTotal)||0) + (parseInt(stateB.targetTotal)||0) || 60,
+      includePisa: stateA.includePisa!==undefined ? stateA.includePisa : true,
+      pisaPoints: stateA.pisaPoints||2,
+      pisaDomain: stateA.pisaDomain||'Analysis',
+      includeOE: stateA.includeOE!==undefined ? stateA.includeOE : true,
+      oePoints: stateA.oePoints||5,
+      oeDomain: stateA.oeDomain||'Evaluating',
       comps: finalComps,
       verbs: unionVerbs
     };
@@ -2072,8 +2170,8 @@ function buildMakerSlots(){
     });
   });
   slots.sort((a,b)=>a.num-b.num);
-  slots.push({num:tosData.pisaNum, competency:'PISA-like Question', isPisa:true});
-  slots.push({num:tosData.oeNum, competency:'Open-Ended Question', isOE:true});
+  if(tosData.pisaNum) slots.push({num:tosData.pisaNum, competency:'PISA-like Question', isPisa:true, domain:tosData.pisaDomain});
+  if(tosData.oeNum) slots.push({num:tosData.oeNum, competency:'Open-Ended Question', isOE:true, domain:tosData.oeDomain});
   return slots;
 }
 
