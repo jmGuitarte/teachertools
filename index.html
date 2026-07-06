@@ -723,9 +723,9 @@ table.tbl-tos tr.total-row td{background:var(--paper-deep);font-weight:700;}
           <input type="text" id="geminiWorkerUrl" placeholder="https://your-worker-name.yourname.workers.dev">
         </div>
         <div class="field" style="margin-bottom:12px;">
-          <label>Gemini Model</label>
-          <input type="text" id="geminiModelName" placeholder="gemini-2.5-flash">
-          <span style="font-size:11px;color:#9a8e76;">If AI generation ever fails with a "quota"/"429" error for everyone at once, check <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">Google's deprecation page</a> — Google periodically retires model names.</span>
+          <label>Gemini Models <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#b0a080;">(comma-separated, in fallback order)</span></label>
+          <input type="text" id="geminiModelName" placeholder="gemini-2.5-flash, gemini-2.5-flash-lite, gemini-2.0-flash">
+          <span style="font-size:11px;color:#9a8e76;">The app automatically rotates between these — on a 30-minute timer, and immediately if a request actually hits a rate-limit error. If AI generation ever fails for everyone at once, check <a href="https://ai.google.dev/gemini-api/docs/deprecations" target="_blank" rel="noopener">Google's deprecation page</a> — Google periodically retires model names.</span>
         </div>
         <button class="btn btn-sm btn-primary" onclick="saveAiConfig()">Save (applies to all teachers)</button>
         <span id="aiConfigSaveStatus" style="font-size:11.5px;color:#8a7a5c;margin-left:8px;"></span>
@@ -2850,8 +2850,34 @@ function refreshMakerItem(num){
    ═══════════════════════════════════════════════════ */
 let GEMINI_WORKER_URL = '';
 let GEMINI_API_KEY_PERSONAL = '';
-let GEMINI_MODEL = 'gemini-2.5-flash'; // default — editable in AI Assistance Setup since Google periodically retires model names
+let GEMINI_MODEL_LIST = ['gemini-2.5-flash','gemini-2.5-flash-lite','gemini-2.0-flash']; // default fallback list — editable in AI Assistance Setup
+let GEMINI_MODEL_INDEX = 0; // which model in the list is currently active
+const MODEL_ROTATION_INTERVAL_MS = 30*60*1000; // 30 minutes — how often the timed rotation advances
 let makerRefMaterial = '';
+
+function getCurrentGeminiModel(){
+  if(!GEMINI_MODEL_LIST.length) return 'gemini-2.5-flash';
+  return GEMINI_MODEL_LIST[GEMINI_MODEL_INDEX % GEMINI_MODEL_LIST.length];
+}
+
+/* Deterministic time-window index: same formula for everyone, so "which model is
+   active" only changes once per MODEL_ROTATION_INTERVAL_MS, not on every reload. */
+function computeRotationIndex(listLength){
+  if(listLength<=0) return 0;
+  return Math.floor(Date.now()/MODEL_ROTATION_INTERVAL_MS) % listLength;
+}
+
+function applyTimedModelRotation(){
+  if(!GEMINI_MODEL_LIST.length) return;
+  const newIndex=computeRotationIndex(GEMINI_MODEL_LIST.length);
+  if(newIndex!==GEMINI_MODEL_INDEX){
+    GEMINI_MODEL_INDEX=newIndex;
+    renderAiConfigUI();
+  }
+}
+// Re-check every minute whether the current time window has rolled over — catches the
+// "after 30 minutes" case for a tab that's stayed open, not just fresh sign-ins.
+setInterval(applyTimedModelRotation, 60*1000);
 
 function normalizeWorkerUrl(url){
   url=(url||'').trim();
@@ -2859,7 +2885,7 @@ function normalizeWorkerUrl(url){
   return url.replace(/\/+$/,''); // also strip any trailing slash
 }
 function loadGeminiSettings(){
-  // Worker URL and Model now come from Firestore (settings/aiConfig), loaded via
+  // Worker URL and Model list now come from Firestore (settings/aiConfig), loaded via
   // loadAiConfig() on sign-in — admin-controlled and shared school-wide. Only the
   // personal API key and reference material remain per-browser here.
   try{ GEMINI_API_KEY_PERSONAL = localStorage.getItem('tos_v2_gemini_key_personal') || ''; }catch(e){ GEMINI_API_KEY_PERSONAL=''; }
@@ -2868,9 +2894,12 @@ function loadGeminiSettings(){
   const refEl=document.getElementById('makerRefMaterial'); if(refEl) refEl.value=makerRefMaterial;
 }
 
-/* Worker URL + Model: shared, admin-controlled setting stored in Firestore at
+/* Worker URL + Model list: shared, admin-controlled setting stored in Firestore at
    settings/aiConfig. Every signed-in user can READ it (so AI features work for
-   everyone), but only an Admin can WRITE it — see the security rule in the setup guide. */
+   everyone), but only an Admin can WRITE it — see the security rule in the setup guide.
+   The active model rotates automatically: on a timer (every 30 min, including at
+   sign-in), and immediately/reactively if a request actually hits a rate-limit error
+   (see callGemini below). */
 async function loadAiConfig(){
   if(!fbReady || !currentUser) return;
   let legacyWorkerUrl='', legacyModel='';
@@ -2883,12 +2912,15 @@ async function loadAiConfig(){
     // hasn't been saved yet — so an admin who already had this working doesn't need to
     // retype anything, just open AI Assistance Setup and click Save once to migrate it.
     GEMINI_WORKER_URL = normalizeWorkerUrl(data.workerUrl||'') || legacyWorkerUrl;
-    GEMINI_MODEL = data.model || legacyModel || 'gemini-2.5-flash';
+    const modelsStr = data.models || data.model || legacyModel || 'gemini-2.5-flash,gemini-2.5-flash-lite,gemini-2.0-flash';
+    GEMINI_MODEL_LIST = modelsStr.split(',').map(m=>m.trim()).filter(Boolean);
+    if(!GEMINI_MODEL_LIST.length) GEMINI_MODEL_LIST=['gemini-2.5-flash'];
   }catch(err){
     console.warn('Could not load AI config:', err);
     GEMINI_WORKER_URL = legacyWorkerUrl;
-    GEMINI_MODEL = legacyModel || 'gemini-2.5-flash';
+    GEMINI_MODEL_LIST = legacyModel ? [legacyModel] : ['gemini-2.5-flash','gemini-2.5-flash-lite','gemini-2.0-flash'];
   }
+  GEMINI_MODEL_INDEX = computeRotationIndex(GEMINI_MODEL_LIST.length); // fresh pick at sign-in
   renderAiConfigUI();
   updateMakerGenAllVisibility();
 }
@@ -2900,20 +2932,23 @@ function renderAiConfigUI(){
   if(adminBlock) adminBlock.style.display = isAdmin ? 'block' : 'none';
   if(readonlyBlock) readonlyBlock.style.display = isAdmin ? 'none' : 'block';
   const urlEl=document.getElementById('geminiWorkerUrl'); if(urlEl) urlEl.value=GEMINI_WORKER_URL||'';
-  const modelEl=document.getElementById('geminiModelName'); if(modelEl) modelEl.value=GEMINI_MODEL||'';
+  const modelEl=document.getElementById('geminiModelName'); if(modelEl) modelEl.value=GEMINI_MODEL_LIST.join(', ');
   const urlDisp=document.getElementById('aiConfigWorkerDisplay'); if(urlDisp) urlDisp.textContent=GEMINI_WORKER_URL||'(not set)';
-  const modelDisp=document.getElementById('aiConfigModelDisplay'); if(modelDisp) modelDisp.textContent=GEMINI_MODEL||'(not set)';
+  const modelDisp=document.getElementById('aiConfigModelDisplay');
+  if(modelDisp) modelDisp.textContent = `${GEMINI_MODEL_LIST.join(', ')} — currently active: ${getCurrentGeminiModel()}`;
 }
 
 async function saveAiConfig(){
   if(!fbReady || !currentUser || currentRole!=='admin'){ alert('Only an Admin can change this shared setting.'); return; }
   const statusEl=document.getElementById('aiConfigSaveStatus');
   const workerUrl=normalizeWorkerUrl(document.getElementById('geminiWorkerUrl').value);
-  const model=document.getElementById('geminiModelName').value.trim() || 'gemini-2.5-flash';
+  const modelsRaw=document.getElementById('geminiModelName').value.trim() || 'gemini-2.5-flash';
+  const modelsList=modelsRaw.split(',').map(m=>m.trim()).filter(Boolean);
   document.getElementById('geminiWorkerUrl').value=workerUrl;
   try{
-    await fbDb.collection('settings').doc('aiConfig').set({ workerUrl, model });
-    GEMINI_WORKER_URL=workerUrl; GEMINI_MODEL=model;
+    await fbDb.collection('settings').doc('aiConfig').set({ workerUrl, models: modelsList.join(',') });
+    GEMINI_WORKER_URL=workerUrl; GEMINI_MODEL_LIST=modelsList.length?modelsList:['gemini-2.5-flash'];
+    GEMINI_MODEL_INDEX = computeRotationIndex(GEMINI_MODEL_LIST.length);
     renderAiConfigUI();
     updateMakerGenAllVisibility();
     if(statusEl){ statusEl.textContent='✓ Saved — applies to every teacher.'; setTimeout(()=>statusEl.textContent='',4000); }
@@ -2935,14 +2970,24 @@ function updateMakerGenAllVisibility(){
   row.style.display = (GEMINI_WORKER_URL && GEMINI_API_KEY_PERSONAL && tosData) ? 'flex' : 'none';
 }
 
+function isRateLimitError(status, bodyText){
+  if(status===429) return true;
+  const t=(bodyText||'').toUpperCase();
+  return t.includes('RESOURCE_EXHAUSTED') || t.includes('RATE LIMIT') || t.includes('QUOTA');
+}
+
 /* Calls a Cloudflare Worker (not Google directly) purely to sidestep the browser
    CORS restriction that blocks calling Gemini's API directly from a webpage.
    Each person's own Gemini API key travels WITH the request instead of living on
    the Worker — so the Worker holds no secret at all and can be freely shared
-   school-wide; usage is always billed against whoever's key was actually sent. */
-async function callGemini(promptText){
+   school-wide; usage is always billed against whoever's key was actually sent.
+   If the currently active model hits a rate-limit error, this immediately advances
+   to the next model in the fallback list and retries once before giving up — on top
+   of the timed rotation that runs independently every 30 minutes. */
+async function callGemini(promptText, _isRetry){
   if(!GEMINI_WORKER_URL) throw new Error('No Worker URL set. Open "AI Assistance Setup" above — see the Cloudflare Worker Setup Guide.');
   if(!GEMINI_API_KEY_PERSONAL) throw new Error('No Gemini API key set. Open "AI Assistance Setup" above and paste your own free key from aistudio.google.com/apikey.');
+  const modelUsed=getCurrentGeminiModel();
   // Deliberately no 'Content-Type: application/json' header here — setting it turns this
   // into a "non-simple" CORS request, which forces the browser to send a preflight OPTIONS
   // request first. Some restrictive networks block or mishandle that preflight even while
@@ -2951,7 +2996,7 @@ async function callGemini(promptText){
   const res=await fetch(GEMINI_WORKER_URL,{
     method:'POST',
     body:JSON.stringify({
-      model:GEMINI_MODEL,
+      model:modelUsed,
       apiKey:GEMINI_API_KEY_PERSONAL,
       contents:[{parts:[{text:promptText}]}],
       generationConfig:{responseMimeType:'application/json', temperature:0.7}
@@ -2959,7 +3004,14 @@ async function callGemini(promptText){
   });
   if(!res.ok){
     const errBody=await res.text();
-    throw new Error(`Worker/Gemini error (${res.status}): ${errBody.slice(0,200)}`);
+    if(!_isRetry && isRateLimitError(res.status, errBody) && GEMINI_MODEL_LIST.length>1){
+      // React immediately: move to the next model and retry once, rather than waiting
+      // for the next 30-minute timed rotation.
+      GEMINI_MODEL_INDEX=(GEMINI_MODEL_INDEX+1)%GEMINI_MODEL_LIST.length;
+      renderAiConfigUI();
+      return callGemini(promptText, true);
+    }
+    throw new Error(`Worker/Gemini error (${res.status}) using ${modelUsed}: ${errBody.slice(0,200)}`);
   }
   const data=await res.json();
   const text=data?.candidates?.[0]?.content?.parts?.[0]?.text;
