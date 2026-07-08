@@ -2066,6 +2066,83 @@ function renderSubmissionList(){
   }).join('') + '</div>';
 }
 
+/* Builds an intuitive review view for a submission's test items: a completion summary
+   up top, then items grouped by competency and collapsed by default (matching Test
+   Maker's own look), so a department head can scan for gaps in seconds rather than
+   reading a long flat list end to end. */
+function isItemWrittenForReview(slot, it){
+  if(!it) return false;
+  if(slot.isPisa) return !!(it.passage && it.passage.trim()) && (it.subItems||[]).some(x=>x.text&&x.text.trim());
+  if(slot.isOE) return !!(it.stem && it.stem.trim());
+  if(!it.stem || !it.stem.trim()) return false;
+  if(it.type==='matching') return (it.pairs||[]).filter(p=>p.left&&p.right).length>=1;
+  if(it.type==='tf') return true;
+  if(it.type==='mcq'||!it.type) return !!(it.optA&&it.optB&&it.optC&&it.optD);
+  return true;
+}
+
+function reviewItemBodyHtml(slot,it){
+  if(slot.isPisa){
+    return it.passage
+      ? `${esc(it.passage)}<br>` + (it.subItems||[]).map((sub,i)=>`${String.fromCharCode(97+i)}) ${esc(sub.text||'')} <span style="color:#8a7a5c;">(ans: ${esc(sub.answer||'—')})</span>`).join('<br>')
+      : `<em style="color:var(--warn);">— not written —</em>`;
+  }
+  if(slot.isOE){
+    return it.stem
+      ? `${esc(it.stem)}<br><span style="font-size:11px;color:#8a7a5c;">Rubric: ${esc(it.rubric||'—')}</span>`
+      : `<em style="color:var(--warn);">— not written —</em>`;
+  }
+  if(!it.stem) return `<em style="color:var(--warn);">— not written —</em>`;
+  if(it.type==='tf') return `${esc(it.stem)} <em>(True/False — answer: ${esc(it.tf||'—')})</em>`;
+  if(it.type==='matching') return `${esc(it.stem)}<br>` + (it.pairs||[]).map(p=>`${esc(p.left)} ↔ ${esc(p.right)}`).join('<br>');
+  if(it.type==='open') return `${esc(it.stem)}<br><span style="font-size:11px;color:#8a7a5c;">Rubric: ${esc(it.rubric||'—')}</span>`;
+  return `${esc(it.stem)}<br>A. ${esc(it.optA||'')} &nbsp; B. ${esc(it.optB||'')} &nbsp; C. ${esc(it.optC||'')} &nbsp; D. ${esc(it.optD||'')} <em style="color:#8a7a5c;">(correct: ${esc(it.correct||'—')})</em>`;
+}
+
+function toggleReviewItem(elId){
+  const body=document.getElementById(elId);
+  if(body) body.classList.toggle('open');
+}
+
+function buildReviewItemsHtml(snapshot, subId){
+  const { slots, testItems: mItems } = snapshot;
+  const doneCount = slots.filter(slot=>isItemWrittenForReview(slot, mItems[slot.num])).length;
+  const pct = slots.length ? Math.round(doneCount/slots.length*100) : 0;
+
+  let itemsHtml=''; let lastComp=null;
+  slots.forEach(slot=>{
+    if(slot.competency!==lastComp){
+      itemsHtml+=`<div class="maker-comp-header">${esc(slot.competency)}</div>`;
+      lastComp=slot.competency;
+    }
+    const it=mItems[slot.num]||{};
+    const done=isItemWrittenForReview(slot, it);
+    const domBadge = slot.isPisa?'PISA':slot.isOE?'OE':ABBR[slot.domain];
+    const badgeColor = slot.isPisa?'#5c4a8a':slot.isOE?'#8a4a2f':DCOLOR[slot.domain];
+    const bodyId=`rev-body-${subId}-${slot.num}`;
+    itemsHtml+=`<div class="maker-item ${done?'done':''}">
+      <div class="maker-item-head" onclick="toggleReviewItem('${bodyId}')">
+        <span class="maker-item-num">#${slot.num}</span>
+        <span class="qb-type-badge" style="background:${badgeColor}">${domBadge}</span>
+        <span class="maker-item-status ${done?'done':'todo'}">${done?'✓ Written':'⚠ Not written'}</span>
+      </div>
+      <div class="maker-item-body" id="${bodyId}" style="padding:14px;font-size:13px;line-height:1.6;">${reviewItemBodyHtml(slot,it)}</div>
+    </div>`;
+  });
+
+  return `
+    <h4 style="font-family:'Source Serif 4',serif;color:var(--maroon-deep);margin-top:20px;margin-bottom:10px;">📝 Test Items (written by the teacher)</h4>
+    <div class="maker-progress-wrap" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;font-size:12.5px;color:#8a7a5c;">
+        <span>${doneCount} of ${slots.length} items written</span>
+        <span>${pct}%</span>
+      </div>
+      <div class="maker-progress-bar"><div class="maker-progress-fill" style="width:${pct}%;"></div></div>
+    </div>
+    ${itemsHtml}
+  `;
+}
+
 function openSubmission(id){
   const s = rdSubmissions.find(x=>x.id===id);
   if(!s) return;
@@ -2090,29 +2167,7 @@ function openSubmission(id){
 
   let testMakerHtml='';
   if(s.testMakerSnapshot && s.testMakerSnapshot.slots && s.testMakerSnapshot.slots.length){
-    const { slots: mSlots, testItems: mItems } = s.testMakerSnapshot;
-    testMakerHtml = `<h4 style="font-family:'Source Serif 4',serif;color:var(--maroon-deep);margin-top:20px;margin-bottom:10px;">📝 Test Items (written by the teacher)</h4><div>` +
-      mSlots.map(slot=>{
-        const it=mItems[slot.num]||{};
-        let body;
-        if(slot.isPisa){
-          body = it.passage ? `${esc(it.passage)}<br>` + (it.subItems||[]).map((sub,i)=>`${String.fromCharCode(97+i)}) ${esc(sub.text||'')}`).join('<br>') : `<em style="color:var(--warn);">— not written —</em>`;
-        } else if(slot.isOE){
-          body = it.stem ? `${esc(it.stem)}<br><span style="font-size:11px;color:#8a7a5c;">Rubric: ${esc(it.rubric||'—')}</span>` : `<em style="color:var(--warn);">— not written —</em>`;
-        } else if(!it.stem){
-          body = `<em style="color:var(--warn);">— not written —</em>`;
-        } else if(it.type==='tf'){
-          body = `${esc(it.stem)} <em>(True/False — answer: ${esc(it.tf||'')})</em>`;
-        } else if(it.type==='matching'){
-          body = `${esc(it.stem)}<br>` + (it.pairs||[]).map(p=>`${esc(p.left)} ↔ ${esc(p.right)}`).join('<br>');
-        } else if(it.type==='open'){
-          body = `${esc(it.stem)}<br><span style="font-size:11px;color:#8a7a5c;">Rubric: ${esc(it.rubric||'—')}</span>`;
-        } else {
-          body = `${esc(it.stem)}<br>A. ${esc(it.optA||'')} &nbsp; B. ${esc(it.optB||'')} &nbsp; C. ${esc(it.optC||'')} &nbsp; D. ${esc(it.optD||'')} <em style="color:#8a7a5c;">(correct: ${esc(it.correct||'')})</em>`;
-        }
-        const domBadge = slot.isPisa?'PISA':slot.isOE?'OE':ABBR[slot.domain];
-        return `<div class="assembled-q"><span class="qnum">${slot.num}.</span><span style="font-size:10.5px;color:#8a7a5c;">[${domBadge}]</span> ${body}</div>`;
-      }).join('') + `</div>`;
+    testMakerHtml = buildReviewItemsHtml(s.testMakerSnapshot, s.id);
   }
 
   const statuses=['Pending','Approved','NeedsRevision'];
