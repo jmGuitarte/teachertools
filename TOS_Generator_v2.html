@@ -1443,7 +1443,10 @@ function generateTOS(){
     // Per-objective domain classification, filtered in parallel with `objectives` below
     // (same non-empty predicate, same resulting order) — needed so a specific objective
     // can be traced back to which domain(s) it feeds, not just the row's aggregate counts.
-    const objDomains = c.objs.map((o,oi)=>({o,d:c.doms[oi]||[]})).filter(x=>x.o.trim()).map(x=>x.d);
+    // Firestore rejects nested arrays outright (array-of-arrays), so each objective's
+    // domain list is flattened into one comma-joined string rather than a sub-array —
+    // this is also exactly the string format the rendering code needs anyway.
+    const objDomains = c.objs.map((o,oi)=>({o,d:c.doms[oi]||[]})).filter(x=>x.o.trim()).map(x=>x.d.join(','));
     return{label:c.label,lessons:c.lessons||'',objectives:c.objs.filter(o=>o.trim()),objDomains,days:parseFloat(c.days)||0,items:rowItems,pct:c.days/totalDays,domains:domMap,placement:placement.join('\n'),placementRanges};
   });
   tosData={rows,target,totalDays,totalItems,domainRanges,mcqCount,pisaNum,oeNum,pisaPoints,oePoints,pisaDomain,oeDomain};
@@ -2315,8 +2318,8 @@ function openSubmission(id){
   tosHtml += `<th>Placement</th></tr></thead><tbody>`;
   (s.tosRows||[]).forEach((r,ri)=>{
     const objsHtml = (r.objectives&&r.objectives.length) ? `<ul class="comp-objs">` + r.objectives.map((o,oi)=>{
-      const doms = (r.objDomains&&r.objDomains[oi])||[];
-      return `<li class="comp-obj-item" data-comp="${ri}" data-domains="${doms.join(',')}">${esc(o)}</li>`;
+      const doms = (r.objDomains&&r.objDomains[oi])||''; // already a comma-joined string, not an array
+      return `<li class="comp-obj-item" data-comp="${ri}" data-domains="${doms}">${esc(o)}</li>`;
     }).join('') + `</ul>` : '';
     tosHtml += `<tr><td class="comp-title">${esc(r.label)}${objsHtml}</td><td class="num">${r.days}</td><td class="num">${r.items}</td>`;
     DOMAINS.forEach(d=>tosHtml+=`<td class="num tos-cell" data-comp="${ri}" data-domain="${d}">${(r.domains&&r.domains[d])||''}</td>`);
