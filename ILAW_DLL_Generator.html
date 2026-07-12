@@ -161,7 +161,7 @@ a{color:var(--rose);}
   <details class="card-collapse" id="mergeDraftsCard" style="display:none;">
     <summary>🔀 Merge Two Weekly Drafts <span style="font-weight:400;font-size:12px;color:var(--muted);">— combine specific days from two saved drafts into one export</span></summary>
     <div class="collapse-body">
-      <p class="card-desc">Pick two saved cloud drafts, then choose which one each day should come from. Days must match between them (same 4-day or 5-day format) — the result exports using the current DLL Format/template selected above.</p>
+      <p class="card-desc">Pick two saved cloud drafts, then for each day of the merged export, choose any lesson/competency from either draft — not limited to that same day. The result exports using the current DLL Format/template selected above.</p>
       <div class="grid2">
         <div class="field"><label>Draft A</label><select id="mergeDraftA" onchange="renderMergeDayPicker()"><option value="">— choose a saved draft —</option></select></div>
         <div class="field"><label>Draft B</label><select id="mergeDraftB" onchange="renderMergeDayPicker()"><option value="">— choose a saved draft —</option></select></div>
@@ -665,22 +665,21 @@ function renderMergeDayPicker(){
 
   // A day only counts as "available" from a draft if it actually has some non-blank
   // content saved — a bare/empty day key (e.g. a draft saved before generating)
-  // shouldn't silently count as a real option, since that's the #1 reason a day's
-  // dropdown would end up showing only the OTHER draft's option.
+  // shouldn't silently count as a real option.
   const hasRealContent = (dllData, day) => {
     const c = dllData && dllData[day];
     return !!(c && Object.values(c).some(v => v && v.trim && v.trim()));
   };
+  const DAY_ORDER = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY'];
   const daysA = Object.keys(stateA.dllData||{}).filter(d => hasRealContent(stateA.dllData, d));
   const daysB = Object.keys(stateB.dllData||{}).filter(d => hasRealContent(stateB.dllData, d));
-  const allDays = [...new Set([...daysA, ...daysB])];
-  if(!allDays.length){ el.innerHTML = '<p class="hint" style="color:var(--warn);">Neither draft has generated day content yet.</p>'; return; }
+  const sourceDays = DAY_ORDER.filter(d => daysA.includes(d) || daysB.includes(d));
+  if(!sourceDays.length){ el.innerHTML = '<p class="hint" style="color:var(--warn);">Neither draft has generated day content yet.</p>'; return; }
 
-  // Flag up front if one whole draft has nothing generated — this is the most likely
-  // reason every day's dropdown would show only one option instead of two.
+  // Flag up front if one whole draft has nothing generated.
   let warning = '';
-  if(!daysA.length) warning = `<p class="hint" style="display:block;margin-bottom:10px;color:var(--warn);">⚠ "${esc(draftA.title||'Draft A')}" has no generated content saved, so only "${esc(draftB.title||'Draft B')}" is selectable below. Generate the DLL content in that draft and save it again if you want to choose between both.</p>`;
-  else if(!daysB.length) warning = `<p class="hint" style="display:block;margin-bottom:10px;color:var(--warn);">⚠ "${esc(draftB.title||'Draft B')}" has no generated content saved, so only "${esc(draftA.title||'Draft A')}" is selectable below. Generate the DLL content in that draft and save it again if you want to choose between both.</p>`;
+  if(!daysA.length) warning = `<p class="hint" style="display:block;margin-bottom:10px;color:var(--warn);">⚠ "${esc(draftA.title||'Draft A')}" has no generated content saved, so only "${esc(draftB.title||'Draft B')}"'s lessons are listed below. Generate the DLL content in that draft and save it again if you want both drafts available.</p>`;
+  else if(!daysB.length) warning = `<p class="hint" style="display:block;margin-bottom:10px;color:var(--warn);">⚠ "${esc(draftB.title||'Draft B')}" has no generated content saved, so only "${esc(draftA.title||'Draft A')}"'s lessons are listed below. Generate the DLL content in that draft and save it again if you want both drafts available.</p>`;
 
   // Option label format: Day - Lesson (the draft's title) - Learning Objective —
   // the objective is left off if it'd make the line too long to read comfortably.
@@ -696,15 +695,30 @@ function renderMergeDayPicker(){
     return label;
   };
 
-  el.innerHTML = warning + `<p class="hint" style="display:block;margin-bottom:8px;">For each day, choose which draft's lesson to use in the merged export:</p>` +
-    allDays.map(day => {
-      const inA = daysA.includes(day), inB = daysB.includes(day);
-      const defaultSide = inA ? 'A' : 'B';
+  // One shared POOL of every lesson/competency from BOTH drafts, across ALL days —
+  // this is what "list them all regardless of the day" means: every target day's
+  // dropdown offers this same full pool, not just that day's own two options, so
+  // you can put e.g. Draft B's Wednesday lesson into the Monday slot if you want.
+  // Each entry's value is "A:SOURCE_DAY" or "B:SOURCE_DAY" so export knows exactly
+  // which draft AND which original day the chosen content actually came from.
+  const pool = [];
+  sourceDays.forEach(day => {
+    if(daysA.includes(day)) pool.push({ value: `A:${day}`, label: optionLabel(stateA.dllData, draftA.title, day) });
+    if(daysB.includes(day)) pool.push({ value: `B:${day}`, label: optionLabel(stateB.dllData, draftB.title, day) });
+  });
+  const optionsHTML = (defaultValue) => pool.map(p =>
+    `<option value="${p.value}" ${p.value===defaultValue?'selected':''}>${esc(p.label)}</option>`
+  ).join('');
+
+  el.innerHTML = warning + `<p class="hint" style="display:block;margin-bottom:8px;">For each day, pick any lesson/competency from either draft — every day's dropdown lists all of them, from Monday through Friday of both drafts, not just that same day.</p>` +
+    sourceDays.map(targetDay => {
+      // Default to this same day's own content when available, matching the old
+      // behavior as a starting point — still freely changeable to any other entry.
+      const defaultValue = daysA.includes(targetDay) ? `A:${targetDay}` : (daysB.includes(targetDay) ? `B:${targetDay}` : pool[0].value);
       return `<div style="display:flex;align-items:center;gap:14px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;">
-        <span style="width:90px;flex-shrink:0;">${day.charAt(0)+day.slice(1).toLowerCase()}</span>
-        <select class="merge-day-choice" data-day="${day}" style="flex:1;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);">
-          ${inA ? `<option value="A" ${defaultSide==='A'?'selected':''}>${esc(optionLabel(stateA.dllData, draftA.title, day))}</option>` : ''}
-          ${inB ? `<option value="B" ${defaultSide==='B'?'selected':''}>${esc(optionLabel(stateB.dllData, draftB.title, day))}</option>` : ''}
+        <span style="width:90px;flex-shrink:0;">${targetDay.charAt(0)+targetDay.slice(1).toLowerCase()}</span>
+        <select class="merge-day-choice" data-day="${targetDay}" style="flex:1;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);">
+          ${optionsHTML(defaultValue)}
         </select>
       </div>`;
     }).join('');
@@ -723,15 +737,19 @@ async function exportMergedDLL(){
   const choices = [...document.querySelectorAll('.merge-day-choice')];
   if(!choices.length){ statusEl.textContent='⚠ No days available — pick two different drafts with generated content.'; statusEl.className='status-msg error'; return; }
 
-  // Build a merged dllData using each day's chosen source, then reuse the SAME
-  // fields (school/subject/term/etc.) already active in the current form — the
-  // merge only combines DAY CONTENT, not the surrounding header info, so whichever
-  // header you currently have filled in is what the export uses.
+  // Build a merged dllData: each target day's dropdown value is "A:SOURCE_DAY" or
+  // "B:SOURCE_DAY" — the source day doesn't have to match the target day, since the
+  // dropdown now lists every lesson from both drafts regardless of which day it
+  // originally came from. Then reuse the SAME fields (school/subject/term/etc.)
+  // already active in the current form — the merge only combines DAY CONTENT, not
+  // the surrounding header info, so whichever header you currently have filled in
+  // is what the export uses.
   const mergedDllData = {};
   choices.forEach(select => {
-    const day = select.dataset.day;
-    const source = select.value==='A' ? stateA : stateB;
-    if(source.dllData && source.dllData[day]) mergedDllData[day] = source.dllData[day];
+    const targetDay = select.dataset.day;
+    const [side, sourceDay] = select.value.split(':');
+    const source = side==='A' ? stateA : stateB;
+    if(source.dllData && source.dllData[sourceDay]) mergedDllData[targetDay] = source.dllData[sourceDay];
   });
 
   const previousDllData = dllData;
