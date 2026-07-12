@@ -681,17 +681,17 @@ function renderMergeDayPicker(){
   if(!daysA.length) warning = `<p class="hint" style="display:block;margin-bottom:10px;color:var(--warn);">⚠ "${esc(draftA.title||'Draft A')}" has no generated content saved, so only "${esc(draftB.title||'Draft B')}"'s lessons are listed below. Generate the DLL content in that draft and save it again if you want both drafts available.</p>`;
   else if(!daysB.length) warning = `<p class="hint" style="display:block;margin-bottom:10px;color:var(--warn);">⚠ "${esc(draftB.title||'Draft B')}" has no generated content saved, so only "${esc(draftA.title||'Draft A')}"'s lessons are listed below. Generate the DLL content in that draft and save it again if you want both drafts available.</p>`;
 
-  // Option label format: Day - Lesson (the draft's title) - Learning Objective —
-  // the objective is left off if it'd make the line too long to read comfortably.
+  // Option label format: "Day: Lesson - Competency" — the competency segment is
+  // dropped if it'd make the line too long to read comfortably.
   const MAX_OBJECTIVE_CHARS = 90;
   const optionLabel = (dllData, draftTitle, day) => {
     const dayLabel = day.charAt(0) + day.slice(1).toLowerCase();
     const lesson = draftTitle || 'Untitled draft';
     const content = dllData ? dllData[day] : null;
-    const objectiveRaw = content ? (content['Learning Objectives'] || '').replace(/\*\*/g,'').replace(/\s+/g,' ').trim() : '';
-    const firstObjective = objectiveRaw.split(/(?<=[.?!])\s+/)[0] || ''; // just the first sentence, not the whole block
-    let label = `${dayLabel} - ${lesson}`;
-    if(firstObjective && firstObjective.length <= MAX_OBJECTIVE_CHARS) label += ` - ${firstObjective}`;
+    const competencyRaw = content ? (content['Learning Competency'] || '').replace(/\*\*/g,'').replace(/\s+/g,' ').trim() : '';
+    const firstSentence = competencyRaw.split(/(?<=[.?!])\s+/)[0] || ''; // just the first sentence, not the whole block
+    let label = `${dayLabel}: ${lesson}`;
+    if(firstSentence && firstSentence.length <= MAX_OBJECTIVE_CHARS) label += ` - ${firstSentence}`;
     return label;
   };
 
