@@ -2038,6 +2038,7 @@ if(fbReady){
         loadCloudDraftsList();
         loadAiConfig();
         loadMySubmissions();
+        startReviewerNotificationListener();
         const cdc=document.getElementById('cloudDraftsCard'); if(cdc) cdc.style.display='block';
         const msc=document.getElementById('mySubmissionsCard'); if(msc) msc.style.display='block';
       }catch(err){
@@ -2054,6 +2055,7 @@ if(fbReady){
     } else {
       currentUser=null; currentRole=null;
       updateAuthUI();
+      stopReviewerNotificationListener();
       const cdc=document.getElementById('cloudDraftsCard'); if(cdc) cdc.style.display='none';
       const msc=document.getElementById('mySubmissionsCard'); if(msc) msc.style.display='none';
     }
@@ -2085,6 +2087,7 @@ async function submitForReview(){
       termLabel: `${termNames[term-1]} (${assessLabel})`,
       submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
       status: 'Pending',
+      reviewerSeen: false,
       comments: [],
       tosRows: tosData.rows.map(r=>({
         label:r.label, days:r.days, items:r.items, domains:r.domains, placement:r.placement,
@@ -2118,6 +2121,8 @@ async function submitForReview(){
    resubmit afterward.
    ═══════════════════════════════════════════════════ */
 let mySubmissions=[];
+let pendingReviewSubs=[]; // submissions with status Pending and reviewerSeen:false — kept live via onSnapshot
+let reviewerNotifUnsub=null; // unsubscribe function for the real-time listener below
 
 async function loadMySubmissions(){
   const listEl=document.getElementById('mySubmissionsList');
@@ -2146,12 +2151,53 @@ function getUnseenReturnedSubmissions(){
   return mySubmissions.filter(s => (s.status==='Approved' || s.status==='NeedsRevision') && s.teacherSeen===false);
 }
 
+/* Real-time: watches for new Pending submissions so a department head/admin sees the
+   notification appear the moment someone submits, without needing to refresh the page.
+   Firestore's onSnapshot pushes updates live — this replaces the one-time .get() used
+   for the teacher-facing notifications above, which only need to refresh on demand. */
+function startReviewerNotificationListener(){
+  if(reviewerNotifUnsub){ reviewerNotifUnsub(); reviewerNotifUnsub=null; }
+  if(!fbReady || !(currentRole==='departmentHead' || currentRole==='admin')) return;
+  reviewerNotifUnsub = fbDb.collection('submissions').where('status','==','Pending').onSnapshot(snap=>{
+    pendingReviewSubs = snap.docs.map(d=>({ id:d.id, ...d.data() })).filter(s=>s.reviewerSeen===false);
+    updateNotifBadge();
+    const panel=document.getElementById('notifPanel');
+    if(panel && panel.style.display==='block') renderNotifPanel();
+  }, err=>{ console.warn('Reviewer notification listener error:', err); });
+}
+function stopReviewerNotificationListener(){
+  if(reviewerNotifUnsub){ reviewerNotifUnsub(); reviewerNotifUnsub=null; }
+  pendingReviewSubs=[];
+  notifBaselineSet=false; lastNotifCount=0;
+}
+
+const NOTIF_SOUND_URL = 'notif.mp3';
+let notifSoundEl = null;
+let notifBaselineSet = false; // avoids dinging for whatever's already waiting on first load
+let lastNotifCount = 0;
+
+function playNotifSound(){
+  try{
+    if(!notifSoundEl) notifSoundEl = new Audio(NOTIF_SOUND_URL);
+    notifSoundEl.currentTime = 0;
+    notifSoundEl.play().catch(()=>{}); // browsers can block autoplay before any user interaction — fails silently, not worth alerting over
+  }catch(e){}
+}
+
 function updateNotifBadge(){
   const badge=document.getElementById('notifBadge');
   if(!badge) return;
-  const n = getUnseenReturnedSubmissions().length;
+  const n = getUnseenReturnedSubmissions().length + pendingReviewSubs.length;
   badge.textContent = n>9 ? '9+' : String(n);
   badge.style.display = n>0 ? 'flex' : 'none';
+
+  if(!notifBaselineSet){
+    notifBaselineSet = true; // first call just establishes the starting count, no sound
+  } else if(n > lastNotifCount){
+    playNotifSound(); // a genuinely NEW notification arrived — either a submission just got
+                       // returned, or (live, via the reviewer listener) someone just submitted
+  }
+  lastNotifCount = n;
 }
 
 function toggleNotifPanel(){
@@ -2170,18 +2216,38 @@ function toggleNotifPanel(){
 function renderNotifPanel(){
   const panel=document.getElementById('notifPanel');
   if(!panel) return;
-  const items = getUnseenReturnedSubmissions();
-  if(!items.length){
+  const returned = getUnseenReturnedSubmissions();
+  const toReview = pendingReviewSubs;
+  if(!returned.length && !toReview.length){
     panel.innerHTML = `<div style="font-size:12.5px;color:var(--muted);padding:10px;text-align:center;">No new notifications.</div>`;
     return;
   }
   const statusLabels={Approved:'✅ Approved',NeedsRevision:'⚠ Needs Revision'};
-  panel.innerHTML = `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:4px 6px 8px;">${items.length} submission${items.length>1?'s':''} returned to you</div>` +
-    items.map(s => `<div id="notifItem-${s.id}" style="padding:8px 10px;border-radius:8px;cursor:pointer;margin-bottom:4px;" onmouseenter="this.style.background='var(--paper-deep)'" onmouseleave="this.style.background=''" onclick="openNotification('${s.id}')">
-      <div style="font-size:13px;font-weight:600;color:var(--rose);">${esc(s.subject)} ${s.grade?'— '+esc(s.grade):''}</div>
-      <div style="font-size:11.5px;color:var(--muted);">${statusLabels[s.status]||s.status} · ${esc(s.termLabel||'')}</div>
-    </div>`).join('');
+  let html='';
+  if(toReview.length){
+    html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:4px 6px 8px;">${toReview.length} new submission${toReview.length>1?'s':''} to review</div>` +
+      toReview.map(s => `<div id="notifReviewItem-${s.id}" style="padding:8px 10px;border-radius:8px;cursor:pointer;margin-bottom:4px;" onmouseenter="this.style.background='var(--paper-deep)'" onmouseleave="this.style.background=''" onclick="openReviewNotification('${s.id}')">
+        <div style="font-size:13px;font-weight:600;color:var(--rose);">${esc(s.subject)} ${s.grade?'— '+esc(s.grade):''}</div>
+        <div style="font-size:11.5px;color:var(--muted);">Submitted by ${esc(s.teacherName||'')} · ${esc(s.termLabel||'')}</div>
+      </div>`).join('');
+  }
+  if(returned.length){
+    if(toReview.length) html += `<div style="border-top:1px solid var(--line);margin:6px 0;"></div>`;
+    html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:4px 6px 8px;">${returned.length} submission${returned.length>1?'s':''} returned to you</div>` +
+      returned.map(s => `<div id="notifItem-${s.id}" style="padding:8px 10px;border-radius:8px;cursor:pointer;margin-bottom:4px;" onmouseenter="this.style.background='var(--paper-deep)'" onmouseleave="this.style.background=''" onclick="openNotification('${s.id}')">
+        <div style="font-size:13px;font-weight:600;color:var(--rose);">${esc(s.subject)} ${s.grade?'— '+esc(s.grade):''}</div>
+        <div style="font-size:11.5px;color:var(--muted);">${statusLabels[s.status]||s.status} · ${esc(s.termLabel||'')}</div>
+      </div>`).join('');
+  }
+  panel.innerHTML = html;
 }
+
+function openReviewNotification(id){
+  const panel=document.getElementById('notifPanel'); if(panel) panel.style.display='none';
+  setView('review');
+  loadSubmissionsForReview().then(() => openSubmission(id));
+}
+
 
 async function openNotification(id){
   const s = mySubmissions.find(x=>x.id===id);
@@ -2193,7 +2259,7 @@ async function openNotification(id){
   s.teacherSeen = true;
   updateNotifBadge();
   const statusLabels={Approved:'✅ Approved',NeedsRevision:'⚠ Needs Revision'};
-  const lastComment = (s.comments&&s.comments.length) ? s.comments[s.comments.length-1] : null;
+  const lastComment = (s.status==='Approved' && s.comments && s.comments.length) ? s.comments[s.comments.length-1] : null;
   const row = document.getElementById(`notifItem-${id}`);
   if(row){
     row.style.cursor='default';
@@ -2225,7 +2291,7 @@ function renderMySubmissions(){
   listEl.innerHTML = '<div class="rd-list">' + mySubmissions.map(s=>{
     const dt = s.submittedAt && s.submittedAt.toDate ? s.submittedAt.toDate().toLocaleString([], {dateStyle:'medium',timeStyle:'short'}) : '—';
     const statusClass = (s.status||'Pending').replace(/\s+/g,'');
-    const lastComment = (s.comments&&s.comments.length) ? s.comments[s.comments.length-1] : null;
+    const lastComment = (s.status==='Approved' && s.comments && s.comments.length) ? s.comments[s.comments.length-1] : null;
     const hasItems = s.testMakerSnapshot && s.testMakerSnapshot.slots && s.testMakerSnapshot.slots.length;
     const commentCount = Object.values(s.itemComments||{}).filter(c=>c&&c.text).length;
     return `<div class="rd-card">
@@ -2455,6 +2521,16 @@ function openSubmission(id){
   const det=document.getElementById('rdDetailArea');
   det.style.display='block';
 
+  // Mark seen the moment a reviewer actually opens it — clears it from the "new
+  // submissions to review" notification for everyone with reviewer access, since
+  // this is a single shared queue, not tracked per individual department head.
+  if(s.reviewerSeen===false){
+    s.reviewerSeen=true;
+    fbDb.collection('submissions').doc(id).update({ reviewerSeen:true }).catch(()=>{});
+    pendingReviewSubs = pendingReviewSubs.filter(x=>x.id!==id);
+    updateNotifBadge();
+  }
+
   const totDom={};
   DOMAINS.forEach(d=>{ totDom[d]=(s.tosRows||[]).reduce((a,r)=>a+((r.domains&&r.domains[d])||0),0); });
 
@@ -2507,11 +2583,7 @@ function openSubmission(id){
     ${tosHtml}
     ${testMakerHtml}
     <div class="rd-status-row">${statusRow}</div>
-    <div style="margin-top:10px;" id="rdCommentBox">
-      ${s.status==='NeedsRevision' ? `<p style="font-size:12px;color:#a83030;font-weight:600;margin-bottom:6px;">✍️ Explain what needs revision — the teacher will see this comment.</p>` : ''}
-      <div class="grow-wrap" data-replicated-value="" style="${s.status==='NeedsRevision' ? 'outline:1.5px solid #a83030;border-radius:8px;' : ''}"><textarea id="rdCommentInput" placeholder="${s.status==='NeedsRevision' ? 'Explain what needs revision…' : 'Leave a comment…'}" oninput="this.parentNode.dataset.replicatedValue=this.value"></textarea></div>
-      <button class="btn btn-sm btn-primary" style="margin-top:8px;" onclick="addSubmissionComment('${s.id}')">Add comment</button>
-    </div>
+    <p style="font-size:11.5px;color:var(--muted);margin-top:8px;">Use the comment box under each item above for specific feedback. Approving also lets you leave one optional overall note.</p>
     <div style="margin-top:14px;">${commentsHtml}</div>
   `;
 }
@@ -2522,36 +2594,27 @@ async function setSubmissionStatus(id, status){
     // submitted it — Pending is the starting state, not something to notify about.
     const updatePayload = { status };
     if(status==='Approved' || status==='NeedsRevision') updatePayload.teacherSeen = false;
-    await fbDb.collection('submissions').doc(id).update(updatePayload);
-    const s=rdSubmissions.find(x=>x.id===id);
-    if(s){ s.status=status; if(updatePayload.teacherSeen!==undefined) s.teacherSeen=false; }
-    openSubmission(id);
-    if(status==='NeedsRevision'){
-      // Bring the comment box front-and-center so the reviewer explains what needs
-      // fixing — a "Needs Revision" status without an explanation isn't very useful
-      // to the teacher who submitted it.
-      const ta=document.getElementById('rdCommentInput');
-      if(ta){
-        ta.placeholder='Explain what needs revision…';
-        ta.scrollIntoView({behavior:'smooth', block:'center'});
-        ta.focus();
+
+    // Only Approve offers an optional one-time overall note — Needs Revision relies on
+    // the per-item comment boxes instead, so it doesn't need (or get) this prompt.
+    let newComment=null;
+    if(status==='Approved'){
+      const text=(prompt('Optional note to include when this is marked Approved (leave blank to skip):','')||'').trim();
+      if(text){
+        newComment={ author: currentUser.name, text, at: new Date().toLocaleString([], {dateStyle:'medium',timeStyle:'short'}) };
+        updatePayload.comments = firebase.firestore.FieldValue.arrayUnion(newComment);
       }
     }
-  }catch(err){ alert('Could not update status: '+err.message); }
-}
 
-async function addSubmissionComment(id){
-  const ta=document.getElementById('rdCommentInput');
-  const text=ta.value.trim();
-  if(!text) return;
-  const comment={ author: currentUser.name, text, at: new Date().toLocaleString([], {dateStyle:'medium',timeStyle:'short'}) };
-  try{
-    await fbDb.collection('submissions').doc(id).update({
-      comments: firebase.firestore.FieldValue.arrayUnion(comment)
-    });
-    const s=rdSubmissions.find(x=>x.id===id); if(s){ s.comments=s.comments||[]; s.comments.push(comment); }
+    await fbDb.collection('submissions').doc(id).update(updatePayload);
+    const s=rdSubmissions.find(x=>x.id===id);
+    if(s){
+      s.status=status;
+      if(updatePayload.teacherSeen!==undefined) s.teacherSeen=false;
+      if(newComment){ s.comments=s.comments||[]; s.comments.push(newComment); }
+    }
     openSubmission(id);
-  }catch(err){ alert('Could not add comment: '+err.message); }
+  }catch(err){ alert('Could not update status: '+err.message); }
 }
 
 /* ═══════════════════════════════════════════════════
